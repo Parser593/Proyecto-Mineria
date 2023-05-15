@@ -1,0 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+* {
+    padding: 0px;
+    margin: 0px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+nav {
+    background-color: black;
+    text-align: center;
+    color: white;
+    padding: 15px;
+}
+
+.container {
+    width: 90%;
+    margin: 0 auto;
+}
+
+.showcase {
+    display: inline-flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    background-color: #035efc;
+    padding: 15px;
+    margin-top: 50px;
+    text-align: center;
+    width: auto;
+}
+
+.textsh1 {
+    margin-right: 5%;
+    width: auto;
+}
+
+.showcase img {
+    width: auto;
+}
+
+.cargaFile {
+    margin-top: 50px;
+    background-color: #035efc;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.submit {
+    display: flex;
+    justify-content: center;
+}
+
+.upload-area input[type="file"] {
+    display: none;
+}
+
+.upload-area {
+    margin-bottom: 15px;
+    text-align: center;
+    cursor: pointer;
+    color: white;
+    border-radius: 5px;
+    padding: 30px 50px;
+    border: 2px dashed white;
+    font-size: 50px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.upload-area.dover {
+    border: 2px solid white;
+}
+
+
+#mUpload {
+    font-size: 15px;
+    cursor: pointer;
+}
+
+#submitFile {
+    border-radius: 5px;
+    font-weight: bold;
+    height: 45px;
+    width: 120px;
+    border: 1px solid;
+    color: white;
+    background-color: #3b42cc;
+}
+
+#cloud {
+    transition: transform 0.6s ease-in-out;
+    cursor: pointer;
+}
