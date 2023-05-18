@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proyecto Cargado</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/main.css') }}">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+</head>
+<body>
+    <script>
+        // Verificar si la variable de sesión indica que el archivo es incorrecto
+        var archivocargado = "{{ 'true' if session.get('file_uploaded') else 'false' }}";
+        archivocargado = (archivocargado === 'true'); // Convertir a booleano
+
+
+        // Restablecer la variable de sesión para futuros usos
+        {% set _ = session.pop('file_uploaded', None) %};
+
+        // Si la variable indica que el archivo es incorrecto, mostrar SweetAlert
+        if (archivocargado) {
+            swal("Archivo Cargado Exitosamente", "El archivo que subiste ha sido cargado exitosamente.", "success");
+        }
+    </script>
+
+    <nav>
+        
+    </nav>
+
+</body>
+</html>

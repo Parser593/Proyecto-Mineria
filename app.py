@@ -15,7 +15,8 @@ def home():
 def upload_file():
     uploaded_file = request.files['file']
     if(uploaded_file.filename.endswith('.csv') and uploaded_file.mimetype == "text/csv"):
-        return "Archivo recibido y correcto "+uploaded_file.filename
+        session['file_uploaded'] = True
+        return render_template("project.html")
     else:
         session['archivo_incorrecto'] = True
         return redirect(url_for('home'))
