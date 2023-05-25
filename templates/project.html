@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,9 +8,13 @@
     <title>Proyecto Cargado</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/main.css') }}">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/project.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
 </head>
+
 <body>
     <script>
         // Verificar si la variable de sesión indica que el archivo es incorrecto
@@ -27,8 +32,123 @@
     </script>
 
     <nav>
-        
+
     </nav>
 
+    <div id="app">
+        <div class="tabs">
+            <button @click="changeTab('tab1')">EDA</button>
+            <button @click="changeTab('tab2')">PCA</button>
+        </div>
+
+        <div class="tab-content">
+            <div v-if="activeTab === 'tab1'">
+                <!-- Contenido de la pestaña 1 EDA -->
+
+                <h1>EDA Análisis Exploratorio de Datos</h1>
+                <div class="graphs">
+                    <div v-for="grafico in graficosConParrafosVinculados" :key="grafico.imagen">
+                        <h2 v-text="grafico.parrafo"></h2>
+                        <img :src="grafico.imagen" alt="Gráfico">
+                    </div>
+                </div>
+            </div>
+            <div v-else-if="activeTab === 'tab2'">
+                <!-- Contenido de la pestaña 2 PCA -->
+                <h1>PCA Análisis de Componentes Principales</h1>
+                <h2>Correlación</h2>
+                <div class="table-container">
+                    <table class="tabla">
+                        <tr>
+                            <th scoope="row"></th>
+                            <th v-for="encabezado in stringArray" :key="encabezado" v-text="encabezado"></th>
+                        </tr>
+                        <tr v-for="(row, rowIndex) in matriz" :key="rowIndex">
+                            <th v-text="stringArray[rowIndex]"></th> <!-- Encabezado de fila -->
+                            <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="graphs">
+                    <img :src="pca_paths[0]" alt="Imagen 1" />
+                </div>
+                <h2>Cálculo de Covarianzas y componentes</h2>
+                <h2>Componentes Principales</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Componente</th>
+                            <th>Valores</th>
+                            <th>Varianza</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(component, index) in componentes" :key="index">
+                            <td v-text="'Componente '+ (index + 1)"></td>
+                            <td>
+                                <ul>
+                                    <li v-for="(value, valueIndex) in component" :key="valueIndex">
+                                        <p v-text="value"></p>
+                                    </li>
+                                </ul>
+                            </td>
+                            <td v-text="varianza[index]"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Gráfica de Varianza</h2>
+                <div class="graphs">
+                    <img :src="pca_paths[1]" alt="Imagen 1" />
+                </div>
+                <h2>Análisis de Proporción de Cargas</h2>
+                <div class="table-container">
+                    <table class="tabla">
+                        <tr>
+                            <th scoope="row"></th>
+                            <th v-for="encabezado in stringArray" :key="encabezado" v-text="encabezado"></th>
+                        </tr>
+                        <tr v-for="(row, rowIndex) in matriz2" :key="rowIndex">
+                            <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
+                            <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                        </tr>
+                    </table>
+                </div>
+                <h3> Con estos datos deberias ser capaz de seleccionar el número de componentes que deseas y cuales son
+                    las que deseas conservar.</h3>
+                <form id="formComponentes" @submit.prevent="enviarComponentes" method="POST">
+                    <label for="cantidadComponentes">Número de Componentes</label>
+                    <input type="number" id="cantidadComponentes" name="cantidadComponentes" min="0" v-model="maxComponentes"
+                        :max="stringArray.length">
+
+                    <label for="componentesSeleccionadas">Selecciona las Componentes que deseas:</label>
+                    <div v-for="opcion in stringArray" :key="opcion">
+                        <input type="checkbox" :name="'opcion-'+opcion" :value="opcion" v-model="componentesSeleccionados" :disabled="componentesSeleccionados.length >= maxComponentes">
+                        <label v-text="opcion"></label>
+                    </div>
+                    <button type="submit">Seleccionar esas variables</button>
+                </form>
+
+                <div  v-if="mostrarTabla">
+                    <table class="tabla">
+                        <tr>
+                            <th scoope="row"></th>
+                            <th v-for="encabezado in componentesSeleccionados" :key="encabezado" v-text="encabezado"></th>
+                        </tr>
+                        <tr v-for="(row, rowIndex) in matriz3" :key="rowIndex">
+                            <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
+                            <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h1>Análisis Correlacional de Datos </h1>
+            </div>
+        </div>
+    </div>
+
 </body>
+
+<script src="{{url_for('static', filename='js/data-mining.js')}}"></script>
+
 </html>

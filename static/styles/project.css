@@ -6,3 +6,70 @@
     font-family: 'Montserrat', sans-serif;
 }
 
+
+.graphs{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.tabs button {
+    /* Estilos generales de los botones de las pestañas */
+    padding: 10px 20px;
+    background-color: #eee;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  
+  .tabs button.active {
+    /* Estilos para el botón activo */
+    background-color: #fff;
+    border-bottom-color: #333;
+    font-weight: bold;
+  }
+
+
+  .table-container {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    border-collapse: collapse;
+    text-align: center;
+    font-size: 13px;
+    min-width: 100%;
+  }
+
+  table th,
+  table td {
+    border: 1px solid black;
+    padding: 8px;
+  }
+
+  table th {
+    background-color: black;
+    border: 1px solid white;
+    color: white;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f2f2f2; /* Tono de gris para filas pares */
+  }
+
+  tr:nth-child(odd) {
+    background-color: #ffffff; /* Fondo blanco para filas impares */
+  }
+
+  h1, h2{
+    margin-bottom: 15px;
+    margin-top: 15px;
+  }
+
+  ul {
+    list-style-type: none;
+  }
+  
