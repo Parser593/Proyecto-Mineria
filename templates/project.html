@@ -46,10 +46,59 @@
                 <!-- Contenido de la pestaña 1 EDA -->
 
                 <h1>EDA Análisis Exploratorio de Datos</h1>
+                <h2>Primeros quince valores</h2>
+                <div class="table-container">
+                    <table class="tabla">
+                        <tr>
+                            <th scoope="row"></th>
+                            <th v-for="encabezado in variablesTotales" :key="encabezado" v-text="encabezado"></th>
+                        </tr>
+                        <tr v-for="(row, rowIndex) in head15_csv" :key="rowIndex">
+                            <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
+                            <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                        </tr>
+                    </table>
+                </div>
+                <h2>Resumen estaditico de Variables Numéricas</h2>
+                <div class="table-container">
+                    <table class="tabla">
+                        <tr>
+                            <th scoope="row"></th>
+                            <th v-for="encabezado in stringArray3" :key="encabezado" v-text="encabezado"></th>
+                        </tr>
+                        <tr v-for="(row, rowIndex) in matriz4" :key="rowIndex">
+                            <th v-text="variables[rowIndex]"></th> <!-- Encabezado de fila -->
+                            <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                        </tr>
+                    </table>
+                </div>
+                <h2>Gráficos</h2>
                 <div class="graphs">
-                    <div v-for="grafico in graficosConParrafosVinculados" :key="grafico.imagen">
-                        <h2 v-text="grafico.parrafo"></h2>
-                        <img :src="grafico.imagen" alt="Gráfico">
+                    <h2>Distribución de variables numéricas</h2>
+                    <div class="graphsHist">
+                        <div v-for="(ruta, index) in histdis" :key="ruta" :class="{'centered-item': index === histdis.length - 1}">
+                            <iframe :src="ruta"></iframe>
+                        </div>
+                    </div>
+                </div>
+                <div class="graphs">
+                    <h2>Histograma de Variables Categóricas</h2>
+                    <div class="graphsHist">
+                        <div v-for="(ruta, index) in histcat" :key="ruta" :class="{'centered-item': index === histcat.length - 1}">
+                            <iframe :src="ruta"></iframe>
+                        </div>
+                    </div>
+                </div>
+                <div class="graphs">
+                    <h2>Correlación</h2>
+                    <iframe :src="corr" class="correlation"></iframe>
+                </div>
+                <div class="graphs">
+                    <h2>Histograma sin Valores Atípicos</h2>
+                    <div class="graphsHist">
+                        <div v-for="(ruta, index) in histfindis" :key="ruta" :class="{'centered-item': index === histfindis.length - 1}">
+                            <iframe :src="ruta"></iframe>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -61,16 +110,16 @@
                     <table class="tabla">
                         <tr>
                             <th scoope="row"></th>
-                            <th v-for="encabezado in stringArray" :key="encabezado" v-text="encabezado"></th>
+                            <th v-for="encabezado in variables" :key="encabezado" v-text="encabezado"></th>
                         </tr>
                         <tr v-for="(row, rowIndex) in matriz" :key="rowIndex">
-                            <th v-text="stringArray[rowIndex]"></th> <!-- Encabezado de fila -->
+                            <th v-text="variables[rowIndex]"></th> <!-- Encabezado de fila -->
                             <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
                         </tr>
                     </table>
                 </div>
                 <div class="graphs">
-                    <img :src="pca_paths[0]" alt="Imagen 1" />
+                    <iframe :src="corr_path" class="correlation"></iframe>
                 </div>
                 <h2>Cálculo de Covarianzas y componentes</h2>
                 <h2>Componentes Principales</h2>
@@ -99,14 +148,14 @@
 
                 <h2>Gráfica de Varianza</h2>
                 <div class="graphs">
-                    <img :src="pca_paths[1]" alt="Imagen 1" />
+                    <iframe :src="pca_var" class="correlation"></iframe>
                 </div>
                 <h2>Análisis de Proporción de Cargas</h2>
                 <div class="table-container">
                     <table class="tabla">
                         <tr>
                             <th scoope="row"></th>
-                            <th v-for="encabezado in stringArray" :key="encabezado" v-text="encabezado"></th>
+                            <th v-for="encabezado in variables" :key="encabezado" v-text="encabezado"></th>
                         </tr>
                         <tr v-for="(row, rowIndex) in matriz2" :key="rowIndex">
                             <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
@@ -118,22 +167,24 @@
                     las que deseas conservar.</h3>
                 <form id="formComponentes" @submit.prevent="enviarComponentes" method="POST">
                     <label for="cantidadComponentes">Número de Componentes</label>
-                    <input type="number" id="cantidadComponentes" name="cantidadComponentes" min="0" v-model="maxComponentes"
-                        :max="stringArray.length">
+                    <input type="number" id="cantidadComponentes" name="cantidadComponentes" min="0"
+                        v-model="maxComponentes" :max="variables.length">
 
                     <label for="componentesSeleccionadas">Selecciona las Componentes que deseas:</label>
-                    <div v-for="opcion in stringArray" :key="opcion">
-                        <input type="checkbox" :name="'opcion-'+opcion" :value="opcion" v-model="componentesSeleccionados" :disabled="componentesSeleccionados.length >= maxComponentes">
-                        <label v-text="opcion"></label>
+                    <div v-for="opcion in variables" :key="opcion">
+                        <input type="checkbox" :id="'opcion-'+opcion" :value="opcion" v-model="componentesSeleccionados"
+                            :disabled="componentesSeleccionados.length >= maxComponentes">
+                        <label :for="'opcion-'+opcion" v-text="opcion"></label>
                     </div>
                     <button type="submit">Seleccionar esas variables</button>
                 </form>
 
-                <div  v-if="mostrarTabla">
+                <div v-if="mostrarTabla">
                     <table class="tabla">
                         <tr>
                             <th scoope="row"></th>
-                            <th v-for="encabezado in componentesSeleccionados" :key="encabezado" v-text="encabezado"></th>
+                            <th v-for="encabezado in componentesSeleccionados" :key="encabezado" v-text="encabezado">
+                            </th>
                         </tr>
                         <tr v-for="(row, rowIndex) in matriz3" :key="rowIndex">
                             <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
@@ -141,8 +192,6 @@
                         </tr>
                     </table>
                 </div>
-
-                <h1>Análisis Correlacional de Datos </h1>
             </div>
         </div>
     </div>

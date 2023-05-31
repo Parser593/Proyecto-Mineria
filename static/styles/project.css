@@ -73,3 +73,30 @@
     list-style-type: none;
   }
   
+  iframe{
+    width: auto;
+    min-width: 450px;
+    max-height: 650px;
+    min-height: 500px;
+  }
+
+  .graphsHist {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    justify-content: center; /* Centrar horizontalmente */
+    align-items: center; /* Centrar verticalmente */
+    column-gap: 8%;
+  }
+  
+  .centered-item {
+    grid-column-start: 1;
+    grid-column-end: 3;
+    justify-self: center;
+  }
+
+  .correlation{
+    width: auto;
+    height: auto;
+    min-width: 1000px;
+    min-height: 650px;
+  }

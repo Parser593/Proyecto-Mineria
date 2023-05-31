@@ -1,56 +1,121 @@
-document.getElementById('formComponentes').addEventListener
+function parseCSV2matrix(describedCSV, flag) {
+  let i = -1;
+  const matrizaux = [];
+  const stringArray = [];
+
+  for (const key in describedCSV) {
+    if (describedCSV.hasOwnProperty(key)) {
+      const obj = describedCSV[key];
+      i += 1;
+      let j = 0;
+      matrizaux[i] = [];
+      for (const prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+          const value = obj[prop];
+          matrizaux[i][j] = value;
+          stringArray.push(prop);
+          j += 1;
+        }
+      }
+    }
+  }
+
+  if (flag === 1) {
+    return matrizaux
+  } else if (flag === 2) {
+    return { matrizaux, stringArray };
+  }
+}
+
 
 new Vue({
+
   el: '#app',
   data: {
+    loading: true,
     nombreCSV: '', // Aquí se almacenará el nombre del archivo CSV
     activeTab: 'tab1',
+    head15_csv: [],
     eda_paths: [],
-    pca_paths: [],
-    corrPcsv: {},
+    pca_var: "",
+    histdis: [],
+    histcat: [],
+    histfindis: [],
     varianza: [],
+    corr: '',
     componentes: [],
-    cargasComponentes: {},
-    stringArray: [],
+    variables: [],
+    variablesTotales: [],
+    stringArray3: [],
+    mheadeda: [],
+    corr_path: "",
     matriz: [],
     matriz2: [],
     matriz3: [],
+    matriz4: [],
     componentesSeleccionados: [],
     maxComponentes: 0,
     csvpca: [],
     mostrarTabla: false
   },
-  computed: {
-    graficosConParrafosVinculados() {
-      return this.eda_paths.map((ruta, indice) => {
-        let parrafo = '';
 
-        if (indice < 2) {
-          if (indice == 0) {
-            parrafo = ' Distribución de variables numéricas';
-          } else {
-            parrafo = ' Histograma de Variables Categóricas';
-          }
-        } else if (ruta.includes('corr')) {
-          parrafo = 'Identificación de relaciones entre pares variables';
-        } else if (ruta.includes('finhist')) {
-          parrafo = 'Eliminación de datos Atípicos';
-        }
-
-        return {
-          imagen: ruta,
-          parrafo: parrafo
-        };
-      });
-    }
-  },
 
   methods: {
+
     changeTab(tab) {
       this.activeTab = tab;
       if (tab === 'tab2') {
-        this.calculateCorrelation();
+        this.obtainCorrelation();
+        this.calculateCovarComp();
       }
+    },
+
+    getheadEDA() {
+      axios.post('/get_edahead')
+        .then(response => {
+          const head15csv = JSON.parse(response.data);
+
+          const result = parseCSV2matrix(head15csv, 2);
+          this.head15_csv = result.matrizaux;
+          this.variablesTotales = result.stringArray;
+
+          const indice = this.variablesTotales.length / 15;
+          this.variablesTotales.splice(indice)
+        })
+        .catch(error => {
+          console.log(error)
+        });
+    },
+    getEDASummary() {
+      axios.post('/eda_summ')
+        .then(response => {
+          this.described_csv = JSON.parse(response.data);
+          let i = -1;
+          for (const key in this.described_csv) {
+            if (this.described_csv.hasOwnProperty(key)) {
+              const obj = this.described_csv[key];
+              i += 1;
+              let j = 0;
+              this.matriz4[i] = [];
+              this.variables.push(key);
+              for (const prop in obj) {
+                if (obj.hasOwnProperty(prop)) {
+                  const value = obj[prop];
+                  this.matriz4[i][j] = value;
+                  this.stringArray3.push(prop);
+                  j += 1;
+                }
+              }
+            }
+          }
+
+          const indice = this.stringArray3.length / this.variables.length;
+          this.stringArray3.splice(indice)
+        })
+        .catch(error => {
+          // Manejar el error si ocurre
+          console.error(error);
+        });
     },
     generateGraph() {
       // Llamar a la función en Flask que genera los gráficos
@@ -60,56 +125,52 @@ new Vue({
           this.eda_paths = response.data.graficoPaths;
           this.nombreCSV = response.data.nombreCSV;
 
+          this.eda_paths.forEach(ruta => {
+            if (ruta.includes('histd')) {
+              //parrafo = ' Distribución de variables numéricas';
+              this.histdis.push(ruta);
+            } else if (ruta.includes('histcat')) {
+              //parrafo = ' Histograma de Variables Categóricas';
+              this.histcat.push(ruta);
+            } else if (ruta.includes('finhist')) {
+              //parrafo = 'Eliminación de datos Atípicos';
+              this.histfindis.push(ruta);
+            } else {
+              this.corr = ruta;
+            }
+          });
+
         })
         .catch(error => {
           // Manejar el error si ocurre
           console.error(error);
         });
     },
-    calculateCorrelation() {
-      axios.post('/correlation')
+    obtainCorrelation() {
+      axios.post('/pca_correlation')
+        .then(response => {
+          const corrPcsv = JSON.parse(response.data.corrPcsv);
+          this.corr_path = response.data.pca_path;
+          const matriz = parseCSV2matrix(corrPcsv, 1)
+          this.matriz = matriz
+        })
+        .catch(error => {
+          console.log(error)
+        });
+    },
+
+
+    calculateCovarComp() {
+      axios.post('/covarComp')
         .then(response => {
 
-          let i = -1;
-          this.corrPcsv = JSON.parse(JSON.stringify(response.data.corrPcsv));
-          this.pca_paths = response.data.pca_paths;
+          this.pca_var = response.data.pca_var;
           this.varianza = response.data.varianza;
           this.componentes = response.data.components;
-          this.cargasComponentes = JSON.parse(JSON.stringify(response.data.cargasComponentes));
-          this.stringArray = [];
-          for (const key in this.corrPcsv) {
-            if (this.corrPcsv.hasOwnProperty(key)) {
-              const obj = this.corrPcsv[key];
-              i += 1;
-              let j = 0;
-              this.matriz[i] = [];
-              this.stringArray.push(key);
-              for (const prop in obj) {
-                if (obj.hasOwnProperty(prop)) {
-                  const value = obj[prop];
-                  this.matriz[i][j] = value;
-                  j += 1;
-                }
-              }
-            }
-          }
-
-          i = -1
-          for (const key in this.cargasComponentes) {
-            if (this.corrPcsv.hasOwnProperty(key)) {
-              const obj = this.cargasComponentes[key];
-              i += 1;
-              let j = 0;
-              this.matriz2[i] = [];
-              for (const prop in obj) {
-                if (obj.hasOwnProperty(prop)) {
-                  const value = obj[prop];
-                  this.matriz2[i][j] = value;
-                  j += 1;
-                }
-              }
-            }
-          }
+          const cargasComponentes = JSON.parse(response.data.cargasComponentes);
+          console.log(this.pca_paths)
+          const matriz2 = parseCSV2matrix(cargasComponentes, 1)
+          this.matriz2 = matriz2
 
         })
         .catch(error => {
@@ -123,9 +184,9 @@ new Vue({
         compSeleccionados: componentesSeleccionados
       })
         .then(response => {
-          this.csvpca = JSON.parse(JSON.stringify(response.data.csvpca));
+          this.csvpca = JSON.parse(response.data.csvpca);
           console.table(this.csvpca)
-          let i=-1;
+          let i = -1;
           for (const key in this.csvpca) {
             if (this.csvpca.hasOwnProperty(key)) {
               const obj = this.csvpca[key];
@@ -141,18 +202,7 @@ new Vue({
               }
             }
           }
-/*           for (const key in this.csvpca) {
-            if (this.csvpca.hasOwnProperty(key)) {
-              const obj = this.csvpca[key];
-              for (const prop in obj) {
-                if (obj.hasOwnProperty(prop)) {
-                  const value = obj[prop];
-                  console.log(` ${value}`);
-                }
-              }
-            }
-          } */
-          this.mostrarTabla = true; 
+          this.mostrarTabla = true;
           console.table(this.matriz3);
         })
         .catch(error => {
@@ -162,6 +212,7 @@ new Vue({
   },
   mounted() {
     this.generateGraph();
-    //this.calculateCorrelation();
+    this.getheadEDA();
+    this.getEDASummary();
   }
 });
