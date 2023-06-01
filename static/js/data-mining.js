@@ -54,8 +54,8 @@ new Vue({
     matriz3: [],
     matriz4: [],
     componentesSeleccionados: [],
-    maxComponentes: 0,
-    csvpca: [],
+    componentesSeleccionados2: [],
+    numComponentes: 0,
     mostrarTabla: false
   },
 
@@ -69,6 +69,17 @@ new Vue({
         this.calculateCovarComp();
       }
     },
+
+      getGraphClass(index, arrayLength) {
+        index = index+1;
+        if (index % 2 === 0 && index === arrayLength) {
+          return ''; // Sin clase adicional para elementos pares
+        } else if (index === arrayLength) {
+          return 'centered-item'; // Clase para el último elemento impar
+        } else {
+          return ''; // Sin clase adicional para otros casos
+        }
+      },
 
     getheadEDA() {
       axios.post('/get_edahead')
@@ -113,7 +124,7 @@ new Vue({
           this.stringArray3.splice(indice)
         })
         .catch(error => {
-          // Manejar el error si ocurre
+          window.location.href = '/';
           console.error(error);
         });
     },
@@ -158,8 +169,6 @@ new Vue({
           console.log(error)
         });
     },
-
-
     calculateCovarComp() {
       axios.post('/covarComp')
         .then(response => {
@@ -168,7 +177,6 @@ new Vue({
           this.varianza = response.data.varianza;
           this.componentes = response.data.components;
           const cargasComponentes = JSON.parse(response.data.cargasComponentes);
-          console.log(this.pca_paths)
           const matriz2 = parseCSV2matrix(cargasComponentes, 1)
           this.matriz2 = matriz2
 
@@ -184,35 +192,54 @@ new Vue({
         compSeleccionados: componentesSeleccionados
       })
         .then(response => {
-          this.csvpca = JSON.parse(response.data.csvpca);
-          console.table(this.csvpca)
-          let i = -1;
-          for (const key in this.csvpca) {
-            if (this.csvpca.hasOwnProperty(key)) {
-              const obj = this.csvpca[key];
-              i += 1;
-              let j = 0;
-              this.matriz3[i] = [];
-              for (const prop in obj) {
-                if (obj.hasOwnProperty(prop)) {
-                  const value = obj[prop];
-                  this.matriz3[i][j] = value;
-                  j += 1;
-                }
-              }
-            }
-          }
+          this.matriz3 = []
+          this.mostrarTabla = false;
+          const csvpca = JSON.parse(response.data.csvpca);
+
+          const result = parseCSV2matrix(csvpca, 1);
+          this.matriz3 = result;
+          this.componentesSeleccionados2 = this.componentesSeleccionados; 
+
           this.mostrarTabla = true;
           console.table(this.matriz3);
         })
         .catch(error => {
           console.error(error);
         });
-    }
+    },
+    confirmClearSession() {
+      swal({
+        title: "Confirmar",
+        text: "¿Estás seguro de que desea salir? Si sale deberá cargar de nuevo el archvo.",
+        icon: "warning",
+        buttons: ["Cancelar", "Aceptar"],
+        dangerMode: true,
+      }).then((confirmed) => {
+        if (confirmed) {
+          this.clearSession();
+        }
+      });
+    },
+    clearSession() {
+      // Realizar una solicitud AJAX para limpiar las variables de sesión y redirigir al inicio
+      axios.get('/clear_session')
+        .then(() => {
+          // Redirigir al inicio
+          window.location.href = "/";
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    },
+
+
+
+
+
   },
   mounted() {
-    this.generateGraph();
     this.getheadEDA();
+    this.generateGraph();
     this.getEDASummary();
   }
 });

@@ -24,6 +24,7 @@
         // Restablecer la variable de sesión para futuros usos
         {% set _ = session.pop('archivo_incorrecto', None) %};
 
+        
         // Si la variable indica que el archivo es incorrecto, mostrar SweetAlert
         if (archivoIncorrecto) {
             swal("Archivo incorrecto", "El archivo que subiste no es válido.", "error");

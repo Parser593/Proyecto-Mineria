@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from datetime import datetime
+import shutil
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -27,9 +28,8 @@ if not os.path.exists(UPLOAD_FOLDER):
 def home():
     return render_template("index.html")
 
+
 # Recibir archivo
-
-
 @app.route("/upload", methods=['POST'])
 def upload_file():
     uploaded_file = request.files['file']
@@ -49,21 +49,78 @@ def upload_file():
         pickle_file_path = os.path.join(UPLOAD_FOLDER, pickle_file_name)
         csv.to_pickle(pickle_file_path)
 
+
+        nombreCSV = uploaded_file.filename
+        nombreCSV = nombreCSV+"_"+timestamp
+
+        dir_path = os.path.join(app.static_folder, "graphs", nombreCSV)
+        os.makedirs(dir_path)
+
         # Guardar la información en la sesión
         session['file_uploaded'] = True
         session['file_path'] = pickle_file_path
-        return render_template("project.html")
+        session['path_graphs'] = dir_path
+        
+        return redirect(url_for("project"))
     else:
         session['archivo_incorrecto'] = True
         return redirect(url_for('home'))
 
+#CARGAR PAGINA DE PROYECTO
+@app.route("/project")
+def project():
+    return render_template("project.html")
 
+
+#BORRAR COOKIES DE SESION Y FILES GENERADOS EN LA MINERÍA
+@app.route("/clear_session", methods=['GET'])
+def clear_session():
+    # Eliminar las variables de sesión
+    graphs_path = session.get('path_graphs')
+    #PKL CSV
+    file_path_pkl = session.get('file_path')
+    #PJKL NOT NULL
+    file_path = file_path_pkl+"notnull.pkl"
+    if os.path.exists(graphs_path):
+        shutil.rmtree(graphs_path)
+
+    if os.path.exists(file_path_pkl):
+        os.remove(file_path_pkl)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    file_path_pkl = os.path.splitext(file_path_pkl)[0]
+    file_path_pkl = file_path_pkl + ".csv"
+
+    if os.path.exists(file_path_pkl):
+        os.remove(file_path_pkl)
+
+    session.clear()
+
+    return jsonify(success=True)
+
+
+
+
+
+
+
+
+
+
+
+#PROCEDIMIENTOS QUE REALIZAN EL EDA
 @app.route("/eda_summ", methods=['POST'])
 def edaStatSummary():
-    file_path = session.get('file_path')
-    csv = pd.read_pickle(file_path)
-    described = csv.describe().to_json(orient='columns')
-    return jsonify(described)
+    if 'file_path' in session:
+        file_path = session.get('file_path')
+        csv = pd.read_pickle(file_path)
+        described = csv.describe().to_json(orient='columns')
+        return jsonify(described)
+    else:
+        clear_session()
+        session['archivo_incorrecto'] = True
+        return redirect(url_for('home'))
 
 
 @app.route("/get_edahead", methods=['POST'])
@@ -88,6 +145,8 @@ def EDA():
             eda_paths = []
             histogramas = []
             numeric_columns = csv_file.select_dtypes(include='number')
+            graphs_path = session.get('path_graphs')
+            graph_text = "graphs/" + os.path.splitext(nombreCSV)[0] + "/"
 
             for columna in numeric_columns:
                 fig = px.histogram(numeric_columns, x=columna)
@@ -95,21 +154,21 @@ def EDA():
 
             for i, histograma in enumerate(histogramas):
                 filename = f"histd{i}{nombreCSV}.html"
-                hist_path = os.path.join(app.static_folder, "graphs", filename)
+                hist_path = os.path.join(graphs_path, filename)
+
                 histograma.write_html(hist_path)
                 eda_paths.append(
-                    url_for('static', filename="graphs/" + filename))
+                    url_for('static', filename=graph_text + filename))
 
             i = 0
             for col in csv_file.select_dtypes(include='object'):
                 if csv_file[col].nunique() < 10:
                     fig = px.histogram(csv_file, y=col)
                     filename = f"histcat{i}{nombreCSV}.html"
-                    hist_path = os.path.join(
-                        app.static_folder, "graphs", filename)
+                    hist_path = os.path.join(graphs_path, filename)
                     fig.write_html(hist_path)
                     eda_paths.append(
-                        url_for('static', filename="graphs/" + filename))
+                        url_for('static', filename=graph_text + filename))
                     i += 1
 
             nombres_columnas = numeric_columns.columns.tolist()
@@ -132,9 +191,9 @@ def EDA():
             fig.update_traces(textfont={'size': 10})
 
             filename = f"corr{nombreCSV}.html"
-            hist_path = os.path.join(app.static_folder, "graphs", filename)
+            hist_path = os.path.join(graphs_path, filename)
             fig.write_html(hist_path)
-            eda_paths.append(url_for('static', filename="graphs/" + filename))
+            eda_paths.append(url_for('static', filename=graph_text+ filename))
 
             # i+=1
             histogramas = []
@@ -154,10 +213,10 @@ def EDA():
 
             for i, histograma in enumerate(histogramas):
                 filename = f"finhist{i}{nombreCSV}.html"
-                hist_path = os.path.join(app.static_folder, "graphs", filename)
+                hist_path = os.path.join(graphs_path, filename)
                 histograma.write_html(hist_path)
                 eda_paths.append(
-                    url_for('static', filename="graphs/" + filename))
+                    url_for('static', filename=graph_text + filename))
 
             session['eda_paths'] = eda_paths
             session['graficos_generados'] = True
@@ -169,6 +228,10 @@ def EDA():
                     })
 
 
+
+
+
+#PROCEDIMIENTOS QUE REALIZAN EL PCA
 @app.route("/pca_correlation", methods=['POST'])
 def pcaCorrelation():
     pca_path = ""
@@ -182,14 +245,17 @@ def pcaCorrelation():
         # correlacion
         csvfile = pd.read_pickle(file_path)
         csvfile = csvfile.dropna()
+        graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path))[0] + "/"
+        graphs_path = session.get('path_graphs')
 
-        timestamp = datetime.now().strftime('%H%M%S')
         # Generar un nombre único para el archivo pickle
-        pickle_file_name = f"{os.path.basename(file_path)}notnull_{timestamp}.pkl"
+        pickle_file_name = f"{os.path.basename(file_path)}notnull.pkl"
 
         # Guardar el DataFrame en un archivo pickle
         pickle_file_path = os.path.join(UPLOAD_FOLDER, pickle_file_name)
         csvfile.to_pickle(pickle_file_path)
+        session['csv_notnull'] = pickle_file_path
+        
         corrPcsv = csvfile.corr(method='pearson')
 
         numeric_columns = csvfile.select_dtypes(include='number')
@@ -213,12 +279,11 @@ def pcaCorrelation():
         fig.update_traces(textfont={'size': 10})
 
         filename = f"pca_corr{os.path.basename(file_path)}.html"
-        hist_path = os.path.join(app.static_folder, "graphs", filename)
+        hist_path = os.path.join(graphs_path, filename)
         fig.write_html(hist_path)
-        pca_path = url_for('static', filename="graphs/" + filename)
-
-        session['csv_notnull'] = pickle_file_path
+        pca_path = url_for('static', filename=graph_text + filename)
         session['corr_pca'] = pca_path
+
 
     corrPcsv = corrPcsv.round(5)
     corrPcsv = corrPcsv.to_json(orient='columns')
@@ -246,15 +311,25 @@ def PCAcovarComp():
 
     varianza = pca.explained_variance_ratio_
 
-    fig = px.line(np.cumsum(pca.explained_variance_ratio_), labels={
+    if 'var_pca' in session:
+        pca_var = session.get('var_pca')
+    else:
+        graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+        
+        graphs_path = session.get('path_graphs')
+
+
+
+        fig = px.line(np.cumsum(pca.explained_variance_ratio_), labels={
                   'x': 'Número de Componentes', 'y': 'Varianza Acumulada'})
-    fig.update_layout(showlegend=False, xaxis=dict(
+        fig.update_layout(showlegend=False, xaxis=dict(
         gridcolor='lightgray'), yaxis=dict(gridcolor='lightgray'))
 
-    filename = f"pcavar{os.path.basename(file_path_csv)}.html"
-    hist_path = os.path.join(app.static_folder, "graphs", filename)
-    fig.write_html(hist_path)
-    pca_var = url_for('static', filename="graphs/" + filename)
+        filename = f"pcavar{os.path.basename(file_path_csv)}.html"
+        hist_path = os.path.join(graphs_path, filename)
+        fig.write_html(hist_path)
+        pca_var = url_for('static', filename=graph_text+ filename)
+        session['var_pca'] = pca_var
 
     cargasComponentes = pd.DataFrame(abs(components), columns=NuevaMatriz.columns)
     cargasComponentes = cargasComponentes.to_json(orient='index')
@@ -283,4 +358,4 @@ def m2PCA():
     })
 
 
-# ['Longtitude', 'Lattitude', 'Postcode', 'Propertycount', 'Rooms', 'YearBuilt']
+

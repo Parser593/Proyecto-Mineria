@@ -32,13 +32,15 @@
     </script>
 
     <nav>
-
+        <h1>BIENVENIDO</h1>
+        <p v-text="'USANDO ARCHIVO ' + nombreCSV"></p>
     </nav>
 
     <div id="app">
         <div class="tabs">
-            <button @click="changeTab('tab1')">EDA</button>
-            <button @click="changeTab('tab2')">PCA</button>
+            <button :class="{ active: activeTab === 'tab1' }" @click="changeTab('tab1')">EDA</button>
+            <button :class="{ active: activeTab === 'tab2' }" @click="changeTab('tab2')">PCA</button>
+            <button @click="confirmClearSession">Salir</button>
         </div>
 
         <div class="tab-content">
@@ -76,7 +78,7 @@
                 <div class="graphs">
                     <h2>Distribución de variables numéricas</h2>
                     <div class="graphsHist">
-                        <div v-for="(ruta, index) in histdis" :key="ruta" :class="{'centered-item': index === histdis.length - 1}">
+                        <div v-for="(ruta, index) in histdis" :key="ruta" :class="getGraphClass(index, histdis.length)">
                             <iframe :src="ruta"></iframe>
                         </div>
                     </div>
@@ -84,7 +86,7 @@
                 <div class="graphs">
                     <h2>Histograma de Variables Categóricas</h2>
                     <div class="graphsHist">
-                        <div v-for="(ruta, index) in histcat" :key="ruta" :class="{'centered-item': index === histcat.length - 1}">
+                        <div v-for="(ruta, index) in histcat" :key="ruta" :class="getGraphClass(index, histcat.length)">
                             <iframe :src="ruta"></iframe>
                         </div>
                     </div>
@@ -96,7 +98,8 @@
                 <div class="graphs">
                     <h2>Histograma sin Valores Atípicos</h2>
                     <div class="graphsHist">
-                        <div v-for="(ruta, index) in histfindis" :key="ruta" :class="{'centered-item': index === histfindis.length - 1}">
+                        <div v-for="(ruta, index) in histfindis" :key="ruta"
+                            :class="getGraphClass(index, histfindis.length)">
                             <iframe :src="ruta"></iframe>
                         </div>
                     </div>
@@ -121,7 +124,7 @@
                 <div class="graphs">
                     <iframe :src="corr_path" class="correlation"></iframe>
                 </div>
-                <h2>Cálculo de Covarianzas y componentes</h2>
+                <h1>Cálculo de Covarianzas y componentes</h1>
                 <h2>Componentes Principales</h2>
                 <table>
                     <thead>
@@ -166,24 +169,29 @@
                 <h3> Con estos datos deberias ser capaz de seleccionar el número de componentes que deseas y cuales son
                     las que deseas conservar.</h3>
                 <form id="formComponentes" @submit.prevent="enviarComponentes" method="POST">
-                    <label for="cantidadComponentes">Número de Componentes</label>
-                    <input type="number" id="cantidadComponentes" name="cantidadComponentes" min="0"
-                        v-model="maxComponentes" :max="variables.length">
-
-                    <label for="componentesSeleccionadas">Selecciona las Componentes que deseas:</label>
-                    <div v-for="opcion in variables" :key="opcion">
-                        <input type="checkbox" :id="'opcion-'+opcion" :value="opcion" v-model="componentesSeleccionados"
-                            :disabled="componentesSeleccionados.length >= maxComponentes">
-                        <label :for="'opcion-'+opcion" v-text="opcion"></label>
+                    <label id="labelComponentesForm" for="componentesSeleccionadas">Selecciona las Componentes que deseas:</label>
+                    <div id="containerFormComp">
+                        <div class="containerCheckboxes">
+                            <div v-for="opcion in variables" :key="opcion">
+                                <input type="checkbox" :id="'opcion-'+opcion" :value="opcion"
+                                    v-model="componentesSeleccionados">
+                                <label :for="'opcion-'+opcion" v-text="opcion"></label>
+                            </div>
+                        </div>
+                        <div id="componentes">
+                            <p v-text="'Haz seleccionado ' + componentesSeleccionados.length + ' Componentes'"></p>
+                            <button id="btnComponentes" type="submit" class="custom-button">Seleccionar esas variables</button>
+                        </div>
                     </div>
-                    <button type="submit">Seleccionar esas variables</button>
+
+                    
                 </form>
 
                 <div v-if="mostrarTabla">
                     <table class="tabla">
                         <tr>
                             <th scoope="row"></th>
-                            <th v-for="encabezado in componentesSeleccionados" :key="encabezado" v-text="encabezado">
+                            <th v-for="encabezado in componentesSeleccionados2" :key="encabezado" v-text="encabezado">
                             </th>
                         </tr>
                         <tr v-for="(row, rowIndex) in matriz3" :key="rowIndex">
