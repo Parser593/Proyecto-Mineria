@@ -40,6 +40,7 @@
         <div class="tabs">
             <button :class="{ active: activeTab === 'tab1' }" @click="changeTab('tab1')">EDA</button>
             <button :class="{ active: activeTab === 'tab2' }" @click="changeTab('tab2')">PCA</button>
+            <button :class="{ active: activeTab === 'tab3' }" @click="changeTab('tab3')">Árbol de Decisiones</button>
             <button @click="confirmClearSession">Salir</button>
         </div>
 
@@ -169,10 +170,11 @@
                 <h3> Con estos datos deberias ser capaz de seleccionar el número de componentes que deseas y cuales son
                     las que deseas conservar.</h3>
                 <form id="formComponentes" @submit.prevent="enviarComponentes" method="POST">
-                    <label id="labelComponentesForm" for="componentesSeleccionadas">Selecciona las Componentes que deseas:</label>
+                    <label id="labelComponentesForm" for="componentesSeleccionadas">Selecciona las Componentes que
+                        deseas:</label>
                     <div id="containerFormComp">
                         <div class="containerCheckboxes">
-                            <div v-for="opcion in variables" :key="opcion">
+                            <div v-for="opcion in variables" :key="opcion"  class="custom-checkbox">
                                 <input type="checkbox" :id="'opcion-'+opcion" :value="opcion"
                                     v-model="componentesSeleccionados">
                                 <label :for="'opcion-'+opcion" v-text="opcion"></label>
@@ -180,11 +182,13 @@
                         </div>
                         <div id="componentes">
                             <p v-text="'Haz seleccionado ' + componentesSeleccionados.length + ' Componentes'"></p>
-                            <button id="btnComponentes" type="submit" class="custom-button">Seleccionar esas variables</button>
+                            <p>Presione el botón para seleccionarlas y mostrar la tabla de las mismas</p>
+                            <button id="btnComponentes" type="submit" class="custom-button">Seleccionar esas
+                                variables</button>
                         </div>
                     </div>
 
-                    
+
                 </form>
 
                 <div v-if="mostrarTabla">
@@ -199,6 +203,74 @@
                             <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
                         </tr>
                     </table>
+                </div>
+            </div>
+            <div v-else-if="activeTab === 'tab3' ">
+                <h1>Creación de Arboles de Decisiones</h1>
+                <h2>Seleccione que arbol de decisiones desea empezar a crear</h2>
+                <div class="tabs">
+                    <button :class="{ active: activesubTab === 'tab1' }" @click="changesubTab('tab1')">Árbol de
+                        Clasificación</button>
+                    <button :class="{ active: activesubTab === 'tab2' }" @click="changesubTab('tab2')">Árbol de
+                        Pronostico</button>
+                </div>
+                <div v-if="activesubTab === 'tab1' && componentesSeleccionados2.length > 1">
+                    <h1>Árbol de Clasificación</h1>
+                    <h2>Recuerde que los árboles de Clasificación se emplean en el aprendizaje de variables que
+                        clasifican, osea que su valor es una categoria predefinida. Ejemplo: (Sí, No), (Aceptado,
+                        Rechazado), etc.</h2>
+
+                </div>
+
+                <div v-else-if="activesubTab === 'tab2' && componentesSeleccionados2.length > 1">
+                    <h1>Árbol de Pronostico</h1>
+                    <h2>Recuerde que los árboles de Pronosticos se emplean en variables cuantitativas, es decir
+                        numericas, aquellas que su solo valor implica algo.Ejemplo: Área, Precio, Longitud, Número de
+                        Personas, etc.</h2>
+
+                    <table class="tabla">
+                        <tr>
+                            <th scoope="row"></th>
+                            <th v-for="encabezado in componentesSeleccionados2" :key="encabezado" v-text="encabezado">
+                            </th>
+                        </tr>
+                        <tr v-for="(row, rowIndex) in matriz3" :key="rowIndex">
+                            <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
+                            <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                        </tr>
+                    </table>
+
+
+                    <h2>Resumen estaditico de las Componentes Principales</h2>
+                    <div class="table-container">
+                        <table class="tabla">
+                            <tr>
+                                <th scoope="row"></th>
+                                <th v-for="encabezado in componentesSeleccionados2" :key="encabezado"
+                                    v-text="encabezado"></th>
+                            </tr>
+                            <tr v-for="(row, rowIndex) in matriz5" :key="rowIndex">
+                                <th v-text="stringArray3[rowIndex]"></th> <!-- Encabezado de fila -->
+                                <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                            </tr>
+                        </table>
+                        <div class="formArboles">
+                            <form id="formvarDependiente" @submit.prevent="enviarvarDependiente">
+                                <label for="opcionVarDependiente">Seleccione la variable dependiente para graficar las
+                                    componentes:</label>
+                                <select name="opcionVarDependiente" id="opcionVarDependiente" v-model="varDependiente" class="custom-select ">
+                                    <option v-for="item in componentesSeleccionados2" :value="item" v-text="item" >
+                                    </option>
+                                </select>
+                                <button id="btnVarDependiente" type="submit" class="custom-button">Seleccionar variable
+                                    Dependiente</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div v-else>
+                    <h1>Es necesario que pase por el proceso de PCA para que seleccione las componentes principales y a
+                        partir de ahi podamas iniciar la construcción del árbol</h1>
                 </div>
             </div>
         </div>

@@ -12,12 +12,13 @@ body {
 }
 
 
-nav{
+nav {
   background-color: black;
   color: white;
   padding: 10px 20px;
   width: 100%;
 }
+
 .graphs {
   display: flex;
   flex-direction: column;
@@ -26,7 +27,7 @@ nav{
   text-align: center;
 }
 
- .tabs button {
+.tabs button {
   /* Estilos generales de los botones de las pestañas */
   padding: 10px 40px;
   background-color: #eee;
@@ -125,11 +126,11 @@ iframe {
   min-height: 650px;
 }
 
-h2{
+h2 {
   text-align: center;
 }
 
-#labelComponentesForm{
+#labelComponentesForm {
   font-size: 20px;
   font-weight: 500;
 }
@@ -178,4 +179,96 @@ h2{
   background-color: white;
   color: black;
   font-weight: bold;
+}
+
+.formArboles {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0px;
+  margin: 20px 0px;
+}
+
+#formvarDependiente {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#formvarDependiente select {
+  
+}
+
+#formvarDependiente label,
+#formvarDependiente select {
+  display: block;
+  margin-bottom: 10px;
+
+}
+
+
+.custom-select {
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: black;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  width: 150px;
+  height: 30px;
+  text-align: center;
+}
+
+.custom-select option {
+  padding: 10px;
+  font-weight: bold;
+  
+}
+
+
+.custom-checkbox{
+  margin: 0 auto;
+}
+
+.custom-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.custom-checkbox label {
+  display: inline-block;
+  position: relative;
+  padding-left: 25px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.custom-checkbox label:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  background-color: #000;
+  border-radius: 4px;
+}
+
+.custom-checkbox input[type="checkbox"]:checked + label:before {
+  background-color: #fff;
+}
+
+.custom-checkbox input[type="checkbox"]:checked + label:after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }

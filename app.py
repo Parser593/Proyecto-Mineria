@@ -41,7 +41,7 @@ def upload_file():
         uploaded_file.save(file_path)
 
         csv = pd.read_csv(file_path)
-
+        csv =  csv.dropna()
         # Generar un nombre único para el archivo pickle
         pickle_file_name = f"{uploaded_file.filename}_{timestamp}.pkl"
 
@@ -79,15 +79,12 @@ def clear_session():
     graphs_path = session.get('path_graphs')
     #PKL CSV
     file_path_pkl = session.get('file_path')
-    #PJKL NOT NULL
-    file_path = file_path_pkl+"notnull.pkl"
+
     if os.path.exists(graphs_path):
         shutil.rmtree(graphs_path)
 
     if os.path.exists(file_path_pkl):
         os.remove(file_path_pkl)
-    if os.path.exists(file_path):
-        os.remove(file_path)
 
     file_path_pkl = os.path.splitext(file_path_pkl)[0]
     file_path_pkl = file_path_pkl + ".csv"
@@ -115,6 +112,7 @@ def edaStatSummary():
     if 'file_path' in session:
         file_path = session.get('file_path')
         csv = pd.read_pickle(file_path)
+        
         described = csv.describe().to_json(orient='columns')
         return jsonify(described)
     else:
@@ -140,7 +138,6 @@ def EDA():
         file_path = session.get('file_path')
         if file_path:
             csv_file = pd.read_pickle(file_path)
-            # csv_file = csv_file.dropna()
             nombreCSV = os.path.basename(file_path)
             eda_paths = []
             histogramas = []
@@ -176,7 +173,7 @@ def EDA():
             triangle_lower = np.where(
                 triangle_lower != 0, np.round(triangle_lower, 3), np.nan)
 
-            # sns.heatmap(numeric_columns.corr(), cmap='RdBu_r', annot=True, mask=maskInf)
+            
             fig = go.Figure(data=go.Heatmap(z=triangle_lower,
                                             x=nombres_columnas, y=nombres_columnas,
                                             colorscale='RdBu_r',
@@ -186,8 +183,6 @@ def EDA():
                 height=600
             )
 
-            # Personaliza el trazo de la matriz de correlación
-            # Ajusta el tamaño de fuente aquí
             fig.update_traces(textfont={'size': 10})
 
             filename = f"corr{nombreCSV}.html"
@@ -195,7 +190,7 @@ def EDA():
             fig.write_html(hist_path)
             eda_paths.append(url_for('static', filename=graph_text+ filename))
 
-            # i+=1
+            
             histogramas = []
             q1 = csv_file.quantile(0.25)
             q3 = csv_file.quantile(0.75)
@@ -205,6 +200,8 @@ def EDA():
 
             mask = (csv_file >= lower_bound) & (csv_file <= upper_bound)
             csv_file_filter = csv_file[mask]
+            
+            
             csv_file_filter = csv_file_filter.select_dtypes(include='number')
 
             for columna in csv_file_filter:
@@ -235,54 +232,38 @@ def EDA():
 @app.route("/pca_correlation", methods=['POST'])
 def pcaCorrelation():
     pca_path = ""
-    if 'csv_notnull' in session:
-        file_path = session.get('csv_notnull')
-        corrPcsv = pd.read_pickle(file_path)
-        corrPcsv = corrPcsv.corr(method='pearson')
-        pca_path = session.get('corr_pca')
-    else:
-        file_path = session.get('file_path')
-        # correlacion
-        csvfile = pd.read_pickle(file_path)
-        csvfile = csvfile.dropna()
-        graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path))[0] + "/"
-        graphs_path = session.get('path_graphs')
-
-        # Generar un nombre único para el archivo pickle
-        pickle_file_name = f"{os.path.basename(file_path)}notnull.pkl"
-
-        # Guardar el DataFrame en un archivo pickle
-        pickle_file_path = os.path.join(UPLOAD_FOLDER, pickle_file_name)
-        csvfile.to_pickle(pickle_file_path)
-        session['csv_notnull'] = pickle_file_path
         
-        corrPcsv = csvfile.corr(method='pearson')
+    file_path = session.get('file_path')
+    # correlacion
+    csvfile = pd.read_pickle(file_path)
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path))[0] + "/"
+    graphs_path = session.get('path_graphs')
+        
+    corrPcsv = csvfile.corr(method='pearson')
+    numeric_columns = csvfile.select_dtypes(include='number')
 
-        numeric_columns = csvfile.select_dtypes(include='number')
+    nombres_columnas = numeric_columns.columns.tolist()
+    triangle_lower = np.tril(numeric_columns.corr(), k=0)
+    triangle_lower = np.where(
+    triangle_lower != 0, np.round(triangle_lower, 3), np.nan)
 
-        nombres_columnas = numeric_columns.columns.tolist()
-        triangle_lower = np.tril(numeric_columns.corr(), k=0)
-        triangle_lower = np.where(
-            triangle_lower != 0, np.round(triangle_lower, 3), np.nan)
-
-        fig = go.Figure(data=go.Heatmap(z=triangle_lower,
+    fig = go.Figure(data=go.Heatmap(z=triangle_lower,
                                         x=nombres_columnas, y=nombres_columnas,
                                         colorscale='RdBu_r',
                                         texttemplate="%{z}"))
-        fig.update_layout(
+    fig.update_layout(
             width=1200,
-            height=600
-        )
+            height=600)
 
         # Personaliza el trazo de la matriz de correlación
         # Ajusta el tamaño de fuente aquí
-        fig.update_traces(textfont={'size': 10})
+    fig.update_traces(textfont={'size': 10})
 
-        filename = f"pca_corr{os.path.basename(file_path)}.html"
-        hist_path = os.path.join(graphs_path, filename)
-        fig.write_html(hist_path)
-        pca_path = url_for('static', filename=graph_text + filename)
-        session['corr_pca'] = pca_path
+    filename = f"pca_corr{os.path.basename(file_path)}.html"
+    hist_path = os.path.join(graphs_path, filename)
+    fig.write_html(hist_path)
+    pca_path = url_for('static', filename=graph_text + filename)
+    session['corr_pca'] = pca_path
 
 
     corrPcsv = corrPcsv.round(5)
@@ -294,12 +275,7 @@ def pcaCorrelation():
 def PCAcovarComp():
     pca_var = ""
     file_path_csv = session.get('file_path')
-    if 'csv_notnull' in session:
-        file_path = session.get('csv_notnull')
-        csvfile = pd.read_pickle(file_path)
-    else:
-        csvfile = pd.read_pickle(file_path_csv)
-        csvfile = csvfile.dropna()
+    csvfile = pd.read_pickle(file_path_csv)
 
     Estandarizar = StandardScaler()
     NuevaMatriz = csvfile.select_dtypes(include='number')
@@ -348,14 +324,27 @@ def m2PCA():
     comp_seleccionados = datos['compSeleccionados']
     file_path = session.get('file_path')
     csvfile = pd.read_pickle(file_path)
-    csvfile = csvfile.dropna()
     csvpca = csvfile.filter(items=comp_seleccionados)
+    file_pca = "tree"+os.path.basename(file_path)
+    file_pca = os.path.join(os.path.dirname(file_path), file_pca)
+    csvpca.to_pickle(file_pca)
+    session['path_pca_pickle'] = file_pca
+
     csvpca = csvpca.head(15)
     csvpca_list = csvpca.to_json(orient='index')
+
 
     return jsonify({
         'csvpca': csvpca_list
     })
 
 
-
+@app.route('/treeSum', methods=['POST'])
+def treeSumm():
+    file_path = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path)
+    pkl_path = os.path.join(os.path.dirname(file_path), pkl_path)
+    csv = pd.read_pickle(pkl_path)
+    
+    described = round(csv.describe(),5) .to_json(orient='index')
+    return jsonify(described)

@@ -35,6 +35,7 @@ new Vue({
     loading: true,
     nombreCSV: '', // Aquí se almacenará el nombre del archivo CSV
     activeTab: 'tab1',
+    activesubTab: 'tab1',
     head15_csv: [],
     eda_paths: [],
     pca_var: "",
@@ -53,33 +54,40 @@ new Vue({
     matriz2: [],
     matriz3: [],
     matriz4: [],
+    matriz5: [],
     componentesSeleccionados: [],
     componentesSeleccionados2: [],
     numComponentes: 0,
-    mostrarTabla: false
+    mostrarTabla: false,
+    varDependiente: ''
   },
 
 
   methods: {
+   changesubTab(tab) {
+      this.activesubTab = tab;
+    },
 
     changeTab(tab) {
       this.activeTab = tab;
       if (tab === 'tab2') {
         this.obtainCorrelation();
         this.calculateCovarComp();
+      }else if(tab === 'tab3' && this.componentesSeleccionados2.length > 1){
+        this.getPCASummary();
       }
     },
 
-      getGraphClass(index, arrayLength) {
-        index = index+1;
-        if (index % 2 === 0 && index === arrayLength) {
-          return ''; // Sin clase adicional para elementos pares
-        } else if (index === arrayLength) {
-          return 'centered-item'; // Clase para el último elemento impar
-        } else {
-          return ''; // Sin clase adicional para otros casos
-        }
-      },
+    getGraphClass(index, arrayLength) {
+      index = index + 1;
+      if (index % 2 === 0 && index === arrayLength) {
+        return ''; // Sin clase adicional para elementos pares
+      } else if (index === arrayLength) {
+        return 'centered-item'; // Clase para el último elemento impar
+      } else {
+        return ''; // Sin clase adicional para otros casos
+      }
+    },
 
     getheadEDA() {
       axios.post('/get_edahead')
@@ -157,6 +165,8 @@ new Vue({
           console.error(error);
         });
     },
+
+
     obtainCorrelation() {
       axios.post('/pca_correlation')
         .then(response => {
@@ -198,15 +208,17 @@ new Vue({
 
           const result = parseCSV2matrix(csvpca, 1);
           this.matriz3 = result;
-          this.componentesSeleccionados2 = this.componentesSeleccionados; 
+          this.componentesSeleccionados2 = this.componentesSeleccionados;
 
           this.mostrarTabla = true;
-          console.table(this.matriz3);
         })
         .catch(error => {
           console.error(error);
         });
     },
+
+
+
     confirmClearSession() {
       swal({
         title: "Confirmar",
@@ -233,8 +245,32 @@ new Vue({
     },
 
 
+    getPCASummary() {
+      axios.post('/treeSum')
+        .then(response => {
+          this.matriz5 = [];
+          //described_pca = JSON.parse(response.data);
+          this.matriz5 = parseCSV2matrix(JSON.parse(response.data), 1)
 
+        })
+        .catch(error => {
+          console.error(error);
+        });
+    },
 
+    enviarvarDependiente(){
+      const varDependiente = this.varDependiente;
+      axios.post('/grafica_Arboles', {
+        varDependiente: varDependiente
+      })
+      .then( response => {
+        
+
+      })
+      .catch(error =>{
+        console.error(error);
+      });
+    }
 
   },
   mounted() {
