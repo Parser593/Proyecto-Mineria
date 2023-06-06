@@ -1,4 +1,4 @@
-import os
+import os, pickle
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from datetime import datetime
 import shutil
@@ -6,10 +6,16 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-import seaborn as sns
-import json
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler
+from sklearn import model_selection
+from sklearn.tree import DecisionTreeRegressor, plot_tree, DecisionTreeClassifier
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, classification_report, confusion_matrix, accuracy_score
+import matplotlib.pyplot as plt
+
+plt.switch_backend('Agg')
+
 
 
 app = Flask(__name__)
@@ -348,3 +354,475 @@ def treeSumm():
     
     described = round(csv.describe(),5) .to_json(orient='index')
     return jsonify(described)
+
+@app.route('/grafica_Arboles', methods=['POST'])
+def arbolesGraph():
+
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    csv = pd.read_pickle(pkl_path)
+    numeric_columns = csv.select_dtypes(include='number')
+    
+    fig = px.line(csv, x=csv.index, y=numeric_columns.columns)  # Usar 'Index' como la columna 'x'
+    fig.update_traces(marker=dict(symbol='cross', size=10))
+    fig.update_layout(
+    xaxis_title='Index',
+    showlegend=True,
+    height=600,
+    width=1200,
+    legend=dict(
+        yanchor="top",
+        y=0.99,
+        xanchor="left",
+        x=0.01
+    ))
+    graphs_path = session.get('path_graphs')
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+
+    filename = f"{os.path.basename(pkl_path)}.html"
+    graph_path = os.path.join(graphs_path, filename)
+    fig.write_html(graph_path)
+    graph_var = url_for('static', filename=graph_text+ filename)
+
+    return graph_var
+
+@app.route('/RegressionDecisionTree', methods=['POST'])
+def regresiontree():
+    data = request.get_json()
+    # Acceder a los datos recibidos
+    var_dependiente = data['varDependiente']
+    caracteristicas = data['caracteristicas']
+    max_depth = int(data['max_depth'])
+    min_samples_split = int(data['min_samples_split'])
+    min_samples_leaf = int(data['min_samples_leaf'])
+    random_state = int(data['random_state'])
+
+
+    #Abrir archivo
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    pkl = pd.read_pickle(pkl_path)
+
+    x = np.array(pkl.filter(items=caracteristicas))
+    
+    y = np.array(pkl[var_dependiente])
+
+    x_train, x_test, y_train, y_test = model_selection.train_test_split(x, y, 
+                                                                    test_size = 0.2, 
+                                                                    random_state = 0, 
+                                                                    shuffle = True)
+    
+    pronosticoAD = DecisionTreeRegressor(max_depth=max_depth, min_samples_split=min_samples_split, 
+                                         min_samples_leaf=min_samples_leaf, random_state=random_state)
+    pronosticoAD.fit(x_train, y_train)
+
+    y_Pronostico = pronosticoAD.predict(x_test)
+
+    r2score = round((r2_score(y_test, y_Pronostico)*100),5)
+
+    criterio = pronosticoAD.criterion
+    varImportance = pronosticoAD.feature_importances_
+    mae = round(mean_absolute_error(y_test, y_Pronostico),5)
+    mse = round((mean_squared_error(y_test, y_Pronostico)*100),5)
+    rmse = round((mean_squared_error(y_test, y_Pronostico, squared=False)*100),5)
+
+    df = pd.DataFrame({'Real': y_test.flatten(), 'Pronostico': y_Pronostico.flatten()})
+    if(df.shape[0]>70):
+        df = df.drop(df.index[70:])
+
+    df = df.round(5)
+
+    # Crear el gráfico de línea
+    fig = px.line(df, y=['Real', 'Pronostico'])
+
+    fig.update_traces(marker=dict(symbol='cross', size=10))
+    fig.update_layout(
+    xaxis_title='Index',
+    showlegend=True,
+    height=600,
+    width=1200,
+    legend=dict(
+        yanchor="top",
+        y=0.99,
+        xanchor="left",
+        x=0.01
+    ))
+    graphs_path = session.get('path_graphs')
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+
+    filename = f"treegraph{os.path.basename(pkl_path)}.html"
+    graph_path = os.path.join(graphs_path, filename)
+    fig.write_html(graph_path)
+    test_graph = url_for('static', filename=graph_text+ filename)
+
+
+
+    plt.figure(figsize=(10,10))  
+    plot_tree(pronosticoAD, feature_names = caracteristicas)
+    filename = f"treerep{os.path.basename(pkl_path)}.png"
+    graph_path = os.path.join(graphs_path, filename)
+    
+    plt.savefig(graph_path)
+    tree_graph = url_for('static', filename=graph_text + filename)
+    
+
+    varImportance_df = pd.DataFrame({'Importance': varImportance})
+    varImportance_df = varImportance_df.round(5)
+    varImportance_json = varImportance_df.to_json(orient='index')
+
+
+    modelo_pkl = f"arbolpron_{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    with open(modelo_pkl, 'wb') as archivo_pkl:
+        pickle.dump(pronosticoAD, archivo_pkl)
+
+    results = {
+        'r2score': r2score,
+        'criterio': criterio,
+        'varImportance': varImportance_json,
+        'mae': mae,
+        'mse': mse,
+        'rmse': rmse,
+        'valores': df.to_json(orient='index'),
+        'test_graph': test_graph,
+        'tree_graph': tree_graph
+    }
+
+    # Enviar los resultados como una respuesta JSON
+    return jsonify(results)
+
+@app.route('/Pronosticar', methods=['POST'])
+def pronosticar():
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"arbolpron_{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    pronosticoAD = []
+
+
+    # Cargar el modelo desde el archivo pkl
+    with open(modelo_pkl, 'rb') as archivo_pkl:
+        pronosticoAD = pickle.load(archivo_pkl)
+    
+    caracteristicas = request.json  # Obtener los datos enviados desde el formulario
+    
+    # Acceder a los valores de las características
+    caracteristicas_valores = [float(value) for value in caracteristicas.values()]
+
+
+    # Realizar la predicción utilizando el modelo pronosticado
+    pronostico = pronosticoAD.predict([caracteristicas_valores])
+
+    pronostico = str(round(pronostico[0],5))
+
+    # Devolver el resultado de la predicción como respuesta JSON
+    return pronostico
+
+
+
+
+
+
+
+@app.route('/RegressionRandomForest', methods=['POST'])
+def regresionforest():
+    data = request.get_json()
+    # Acceder a los datos recibidos
+    var_dependiente = data['varDependiente']
+    caracteristicas = data['caracteristicas']
+    n_estimators = int(data['n_estimators'])
+    min_samples_split = int(data['min_samples_split'])
+    min_samples_leaf = int(data['min_samples_leaf'])
+    random_state = int(data['random_state'])
+
+
+    #Abrir archivo
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    pkl = pd.read_pickle(pkl_path)
+
+    x = np.array(pkl.filter(items=caracteristicas))
+    
+    y = np.array(pkl[var_dependiente])
+
+    x_train, x_test, y_train, y_test = model_selection.train_test_split(x, y, 
+                                                                    test_size = 0.2, 
+                                                                    random_state = 0, 
+                                                                    shuffle = True)
+    
+    pronosticoBA = RandomForestRegressor(n_estimators=n_estimators, min_samples_split=min_samples_split, 
+                                         min_samples_leaf=min_samples_leaf, random_state=random_state)
+    pronosticoBA.fit(x_train, y_train)
+
+    y_Pronostico = pronosticoBA.predict(x_test)
+
+    r2score = round((r2_score(y_test, y_Pronostico)*100),5)
+
+    criterio = pronosticoBA.criterion
+    varImportance = pronosticoBA.feature_importances_
+    mae = round(mean_absolute_error(y_test, y_Pronostico),5)
+    mse = round((mean_squared_error(y_test, y_Pronostico)*100),5)
+    rmse = round((mean_squared_error(y_test, y_Pronostico, squared=False)*100),5)
+
+    df = pd.DataFrame({'Real': y_test.flatten(), 'Pronostico': y_Pronostico.flatten()})
+    if(df.shape[0]>70):
+        df = df.drop(df.index[70:])
+    df = df.round(5)
+
+    # Crear el gráfico de línea
+    fig = px.line(df, y=['Real', 'Pronostico'])
+
+    fig.update_traces(marker=dict(symbol='cross', size=10))
+    fig.update_layout(
+    xaxis_title='Index',
+    showlegend=True,
+    height=600,
+    width=1200,
+    legend=dict(
+        yanchor="top",
+        y=0.99,
+        xanchor="left",
+        x=0.01
+    ))
+    graphs_path = session.get('path_graphs')
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+
+    filename = f"forestgraph{os.path.basename(pkl_path)}.html"
+    graph_path = os.path.join(graphs_path, filename)
+    fig.write_html(graph_path)
+    test_graph = url_for('static', filename=graph_text+ filename)
+    
+
+    varImportance_df = pd.DataFrame({'Importance': varImportance})
+    varImportance_df = varImportance_df.round(5)
+    varImportance_json = varImportance_df.to_json(orient='index')
+
+
+    modelo_pkl = f"bosquepron_{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    with open(modelo_pkl, 'wb') as archivo_pkl:
+        pickle.dump(pronosticoBA, archivo_pkl)
+
+    results = {
+        'r2score': r2score,
+        'criterio': criterio,
+        'varImportance': varImportance_json,
+        'mae': mae,
+        'mse': mse,
+        'rmse': rmse,
+        'valores': df.to_json(orient='index'),
+        'test_graph': test_graph
+    }
+
+    # Enviar los resultados como una respuesta JSON
+    return jsonify(results)
+
+
+@app.route('/GraphTreeForest', methods=['POST'])
+def graphForest():
+    data = request.get_json()
+    # Acceder a los datos recibidos
+    numeroArbol = int(data['numeroArbol'])
+    caracteristicas = data['caracteristicas']
+
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+
+    modelo_pkl = f"bosquepron_{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    pronosticoBA = []
+
+
+    # Cargar el modelo desde el archivo pkl
+    with open(modelo_pkl, 'rb') as archivo_pkl:
+        pronosticoBA = pickle.load(archivo_pkl)
+
+    graphs_path = session.get('path_graphs')
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+
+    estimador = pronosticoBA.estimators_[numeroArbol]
+
+
+    plt.figure(figsize=(10,10))  
+    plot_tree(estimador, feature_names = caracteristicas)
+
+
+    filename = f"forestrep{os.path.basename(pkl_path)}.png"
+    graph_path = os.path.join(graphs_path, filename)
+    
+    plt.savefig(graph_path)
+    forest_graph = url_for('static', filename=graph_text + filename)
+
+    return forest_graph
+
+
+@app.route('/PronosticarForest', methods=['POST'])
+def pronosticarForest():
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"bosquepron_{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    pronosticoBA = []
+
+
+    # Cargar el modelo desde el archivo pkl
+    with open(modelo_pkl, 'rb') as archivo_pkl:
+        pronosticoBA = pickle.load(archivo_pkl)
+    
+    caracteristicas = request.json  # Obtener los datos enviados desde el formulario
+    
+    # Acceder a los valores de las características
+    caracteristicas_valores = [float(value) for value in caracteristicas.values()]
+
+
+    # Realizar la predicción utilizando el modelo pronosticado
+    pronostico = pronosticoBA.predict([caracteristicas_valores])
+
+    pronostico = str(round(pronostico[0],5))
+
+    # Devolver el resultado de la predicción como respuesta JSON
+    return pronostico
+
+
+
+
+
+
+
+
+@app.route('/ClasificationDecisionTree', methods=['POST'])
+def clasificationtree():
+
+    data = request.get_json()
+    # Acceder a los datos recibidos
+    var_dependiente = data['varDependiente']
+    caracteristicas = data['caracteristicas']
+    max_depth = int(data['max_depth'])
+    min_samples_split = int(data['min_samples_split'])
+    min_samples_leaf = int(data['min_samples_leaf'])
+    random_state = int(data['random_state'])
+
+
+    #Abrir archivo
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    pkl = pd.read_pickle(pkl_path)
+
+    x = np.array(pkl.filter(items=caracteristicas))
+    
+    y = np.array(pkl[var_dependiente])
+    print("inicio")
+    x_train, x_test, y_train, y_test = model_selection.train_test_split(x, y, 
+                                                                    test_size = 0.2, 
+                                                                    random_state = 0, 
+                                                                    shuffle = True)
+    
+
+    
+    ClasificacionAD = DecisionTreeClassifier(max_depth=max_depth, 
+                                          min_samples_split=min_samples_split, 
+                                         min_samples_leaf=min_samples_leaf, 
+                                         random_state=random_state)
+    ClasificacionAD.fit(x_train, y_train)
+    
+    y_Pronostico = ClasificacionAD.predict(x_test)
+    print("Final")
+    accuracyscore = round((accuracy_score(y_test, y_Pronostico)*100),5)
+
+    criterio = ClasificacionAD.criterion
+    varImportance = ClasificacionAD.feature_importances_
+    matrizClas = pd.crosstab(y_test.ravel(), y_Pronostico)
+    matrizClas = matrizClas.to_json(orient='index')
+    
+
+    report = classification_report(y_test, y_Pronostico, output_dict=True)
+    report = pd.DataFrame(report).round(5)
+    report = report.T
+
+    df = pd.DataFrame({'Real': y_test.flatten(), 'Pronostico': y_Pronostico.flatten()})
+    print(df.shape)
+    if(df.shape[0]>70):
+        df = df.drop(df.index[70:])
+        print(df.shape)
+
+    df = df.round(5)
+
+
+    graphs_path = session.get('path_graphs')
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+
+    print("Inicio2")
+    plt.figure(figsize=(15,15))  
+    plot_tree(ClasificacionAD, feature_names = caracteristicas)
+    filename = f"treeclass{os.path.basename(pkl_path)}.png"
+    graph_path = os.path.join(graphs_path, filename)
+    
+    plt.savefig(graph_path)
+    tree_graph = url_for('static', filename=graph_text + filename)
+    print("Fin2")
+
+    varImportance_df = pd.DataFrame({'Importance': varImportance})
+    varImportance_df = varImportance_df.round(5)
+    varImportance_json = varImportance_df.to_json(orient='index')
+
+
+    modelo_pkl = f"arbol_class{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    with open(modelo_pkl, 'wb') as archivo_pkl:
+        pickle.dump(ClasificacionAD, archivo_pkl)
+
+    results = {
+        'accuracyscore': accuracyscore,
+        'criterio': criterio,
+        'varImportance': varImportance_json,
+        'matrizClass': matrizClas,
+        'report': report.to_json(orient='index'),
+        'valores': df.to_json(orient='index'),
+        'tree_graph': tree_graph
+    }
+
+    # Enviar los resultados como una respuesta JSON
+    return jsonify(results)
+
+
+@app.route('/PronosticarClasifiaction', methods=['POST'])
+def pronosticarClasification():
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"arbol_class{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    pronosticoAD = []
+
+
+    # Cargar el modelo desde el archivo pkl
+    with open(modelo_pkl, 'rb') as archivo_pkl:
+        pronosticoAD = pickle.load(archivo_pkl)
+    
+    caracteristicas = request.json  # Obtener los datos enviados desde el formulario
+    
+    # Acceder a los valores de las características
+    caracteristicas_valores = [float(value) for value in caracteristicas.values()]
+    print(caracteristicas_valores)
+
+    # Realizar la predicción utilizando el modelo pronosticado
+    pronostico = pronosticoAD.predict([caracteristicas_valores])
+
+    pronostico = str(pronostico[0])
+
+    # Devolver el resultado de la predicción como respuesta JSON
+    return pronostico

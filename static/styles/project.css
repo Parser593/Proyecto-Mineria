@@ -53,21 +53,25 @@ nav {
 
 
 .table-container {
+  display: flex;
   width: 100%;
   overflow-x: auto;
+  align-items: center;
+  justify-content: center;
+  padding: 25px 0;
 }
 
 table {
   border-collapse: collapse;
   text-align: center;
   font-size: 13px;
-  min-width: 100%;
+  min-width: 50%;
 }
 
 table th,
 table td {
   border: 1px solid black;
-  padding: 8px;
+  padding: 10px 15px;
 }
 
 table th {
@@ -181,25 +185,20 @@ h2 {
   font-weight: bold;
 }
 
-.formArboles {
-  display: flex;
-  flex-direction: column;
+#formvarDependiente{
   align-items: center;
   justify-content: center;
-  padding: 20px 0px;
-  margin: 20px 0px;
+  text-align: center;
+  margin: 50px 0px;
 }
 
-#formvarDependiente {
-  display: flex;
-  flex-direction: column;
+#conatinerformvarDependiente {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   align-items: center;
   justify-content: center;
 }
 
-#formvarDependiente select {
-  
-}
 
 #formvarDependiente label,
 #formvarDependiente select {
@@ -243,6 +242,7 @@ h2 {
   padding-left: 25px;
   cursor: pointer;
   font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .custom-checkbox label:before {
@@ -252,7 +252,7 @@ h2 {
   top: 0;
   width: 18px;
   height: 18px;
-  border: 2px solid #fff;
+  border: 2px solid #000;
   background-color: #000;
   border-radius: 4px;
 }
@@ -271,4 +271,64 @@ h2 {
   border: solid #000;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
+}
+
+#containerComboBox{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#containerComboBox label,
+#containerConfigTree label{
+  margin-right: 20px;
+}
+
+#containerVarInd{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#containerConfigTree{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  
+}
+
+#DatosPronostico table{
+  margin: 20px 0px;
+}
+
+#DatosPronostico p{
+  margin: 10px 0;
+}
+
+
+#container-Pronosticos{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+
+}
+
+
+#container-Pronosticos div{
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+#container-Pronosticos form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#container-Pronosticos label {
+  margin-right: 10px;  
 }

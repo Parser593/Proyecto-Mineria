@@ -40,7 +40,10 @@
         <div class="tabs">
             <button :class="{ active: activeTab === 'tab1' }" @click="changeTab('tab1')">EDA</button>
             <button :class="{ active: activeTab === 'tab2' }" @click="changeTab('tab2')">PCA</button>
-            <button :class="{ active: activeTab === 'tab3' }" @click="changeTab('tab3')">Árbol de Decisiones</button>
+            <button :class="{ active: activeTab === 'tab3' }" @click="changeTab('tab3')">Algoritmos de
+                Pronósticos</button>
+            <button :class="{ active: activeTab === 'tab4' }" @click="changeTab('tab4')">Algoritmos de
+                Clasificación</button>
             <button @click="confirmClearSession">Salir</button>
         </div>
 
@@ -127,28 +130,30 @@
                 </div>
                 <h1>Cálculo de Covarianzas y componentes</h1>
                 <h2>Componentes Principales</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Componente</th>
-                            <th>Valores</th>
-                            <th>Varianza</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(component, index) in componentes" :key="index">
-                            <td v-text="'Componente '+ (index + 1)"></td>
-                            <td>
-                                <ul>
-                                    <li v-for="(value, valueIndex) in component" :key="valueIndex">
-                                        <p v-text="value"></p>
-                                    </li>
-                                </ul>
-                            </td>
-                            <td v-text="varianza[index]"></td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Componente</th>
+                                <th>Valores</th>
+                                <th>Varianza</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(component, index) in componentes" :key="index">
+                                <td v-text="'Componente '+ (index + 1)"></td>
+                                <td>
+                                    <ul>
+                                        <li v-for="(value, valueIndex) in component" :key="valueIndex">
+                                            <p v-text="value"></p>
+                                        </li>
+                                    </ul>
+                                </td>
+                                <td v-text="varianza[index]"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <h2>Gráfica de Varianza</h2>
                 <div class="graphs">
@@ -174,7 +179,7 @@
                         deseas:</label>
                     <div id="containerFormComp">
                         <div class="containerCheckboxes">
-                            <div v-for="opcion in variables" :key="opcion"  class="custom-checkbox">
+                            <div v-for="opcion in variablesTotales" :key="opcion" class="custom-checkbox">
                                 <input type="checkbox" :id="'opcion-'+opcion" :value="opcion"
                                     v-model="componentesSeleccionados">
                                 <label :for="'opcion-'+opcion" v-text="opcion"></label>
@@ -191,7 +196,7 @@
 
                 </form>
 
-                <div v-if="mostrarTabla">
+                <div class="table-container" v-if="mostrarTabla">
                     <table class="tabla">
                         <tr>
                             <th scoope="row"></th>
@@ -206,40 +211,28 @@
                 </div>
             </div>
             <div v-else-if="activeTab === 'tab3' ">
-                <h1>Creación de Arboles de Decisiones</h1>
-                <h2>Seleccione que arbol de decisiones desea empezar a crear</h2>
-                <div class="tabs">
-                    <button :class="{ active: activesubTab === 'tab1' }" @click="changesubTab('tab1')">Árbol de
-                        Clasificación</button>
-                    <button :class="{ active: activesubTab === 'tab2' }" @click="changesubTab('tab2')">Árbol de
-                        Pronostico</button>
-                </div>
-                <div v-if="activesubTab === 'tab1' && componentesSeleccionados2.length > 1">
-                    <h1>Árbol de Clasificación</h1>
-                    <h2>Recuerde que los árboles de Clasificación se emplean en el aprendizaje de variables que
-                        clasifican, osea que su valor es una categoria predefinida. Ejemplo: (Sí, No), (Aceptado,
-                        Rechazado), etc.</h2>
+                <h1>Creación de Algoritmos de Pronosticos</h1>
 
-                </div>
+                <h2>Recuerde que los algoritmos de Pronosticos se emplean en variables cuantitativas, es decir
+                    numericas, aquellas que su solo valor implica algo.Ejemplo: Área, Precio, Longitud, Número de
+                    Personas, etc.</h2>
 
-                <div v-else-if="activesubTab === 'tab2' && componentesSeleccionados2.length > 1">
-                    <h1>Árbol de Pronostico</h1>
-                    <h2>Recuerde que los árboles de Pronosticos se emplean en variables cuantitativas, es decir
-                        numericas, aquellas que su solo valor implica algo.Ejemplo: Área, Precio, Longitud, Número de
-                        Personas, etc.</h2>
-
-                    <table class="tabla">
-                        <tr>
-                            <th scoope="row"></th>
-                            <th v-for="encabezado in componentesSeleccionados2" :key="encabezado" v-text="encabezado">
-                            </th>
-                        </tr>
-                        <tr v-for="(row, rowIndex) in matriz3" :key="rowIndex">
-                            <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
-                            <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
-                        </tr>
-                    </table>
-
+                <div v-if="componentesSeleccionados2.length > 1">
+                    <h2>Componentes Principales</h2>
+                    <div class="table-container">
+                        <table class="tabla">
+                            <tr>
+                                <th scoope="row"></th>
+                                <th v-for="encabezado in componentesSeleccionados2" :key="encabezado"
+                                    v-text="encabezado">
+                                </th>
+                            </tr>
+                            <tr v-for="(row, rowIndex) in matriz3" :key="rowIndex">
+                                <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
+                                <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                            </tr>
+                        </table>
+                    </div>
 
                     <h2>Resumen estaditico de las Componentes Principales</h2>
                     <div class="table-container">
@@ -247,32 +240,501 @@
                             <tr>
                                 <th scoope="row"></th>
                                 <th v-for="encabezado in componentesSeleccionados2" :key="encabezado"
-                                    v-text="encabezado"></th>
+                                    v-text="encabezado">
+                                </th>
                             </tr>
                             <tr v-for="(row, rowIndex) in matriz5" :key="rowIndex">
                                 <th v-text="stringArray3[rowIndex]"></th> <!-- Encabezado de fila -->
                                 <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
                             </tr>
                         </table>
-                        <div class="formArboles">
-                            <form id="formvarDependiente" @submit.prevent="enviarvarDependiente">
-                                <label for="opcionVarDependiente">Seleccione la variable dependiente para graficar las
-                                    componentes:</label>
-                                <select name="opcionVarDependiente" id="opcionVarDependiente" v-model="varDependiente" class="custom-select ">
-                                    <option v-for="item in componentesSeleccionados2" :value="item" v-text="item" >
+                    </div>
+                    <div class="graphs">
+                        <template>
+                            <div>
+                                <iframe :src="graphVarDep" class="correlation"></iframe>
+
+                            </div>
+                        </template>
+                    </div>
+
+                    <h2>Seleccione que algoritmo de pronosticos desea empezar a
+                        crear</h2>
+                    <div class="tabs"
+                        style="display: flex; align-items: center; justify-content: center;">
+                        <button :class="{ active: activesubTab === 'tab1' }" @click="changesubTab('tab1')">Árbol de
+                            Decisión</button>
+                        <button :class="{ active: activesubTab === 'tab2' }" @click="changesubTab('tab2')">Bosques
+                            Aleatorios</button>
+                    </div>
+
+
+                </div>
+
+
+                
+
+
+                <div v-if="activesubTab === 'tab1' && componentesSeleccionados2.length > 1">
+                    <h1>Árbol de Pronostico</h1>
+
+                    <div class="formArboles">
+                        <form id="formvarDependiente" @submit.prevent="correrArbolDecision1">
+                            <h2>Seleccione las variables y configuraciones para iniciar el algoritmo</h2>
+                            <div id="containerComboBox">
+                                <label for="opcionVarDependiente">Seleccione la variable dependiente:</label>
+                                <select name="opcionVarDependiente" id="opcionVarDependiente" v-model="varDependiente"
+                                    class="custom-select" required>
+                                    <option v-for="item in componentesSeleccionados2" :value="item" v-text="item">
                                     </option>
                                 </select>
-                                <button id="btnVarDependiente" type="submit" class="custom-button">Seleccionar variable
-                                    Dependiente</button>
+                            </div>
+                            <div id="conatinerformvarDependiente">
+                                <div id="containerVarInd">
+                                    <div class="containerCheckboxes">
+                                        <div v-for="opcion in componentesSeleccionados2" :key="opcion"
+                                            class="custom-checkbox">
+                                            <input type="checkbox" :name="'opcion2-'+opcion" :id="'opcion2-'+opcion"
+                                                :value="opcion" v-model="caracteristicas">
+                                            <label :for="'opcion2-'+opcion" v-text="opcion"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="containerConfigTree">
+                                    <label for="max_depth">Profundidad máxima:</label>
+                                    <input type="number" id="max_depth" name="max_depth" min="1" v-model="max_depth"
+                                        required>
+
+                                    <label for="min_samples_split">Mínimo de muestras para dividir:</label>
+                                    <input type="number" id="min_samples_split" name="min_samples_split" min="1"
+                                        v-model="min_samples_split" required>
+
+                                    <label for="min_samples_leaf">Mínimo de muestras por hoja:</label>
+                                    <input type="number" id="min_samples_leaf" name="min_samples_leaf" min="1"
+                                        v-model="min_samples_leaf" required>
+
+                                    <label for="random_state">Semilla aleatoria:</label>
+                                    <input type="number" id="random_state" name="random_state" v-model="random_state"
+                                        required>
+                                </div>
+                            </div>
+                            <button id="btnVarDependiente" type="submit" class="custom-button">Seleccionar variables y
+                                configuración</button>
+                        </form>
+                    </div>
+                    <div id="DatosPronostico" v-if="mostrarDataArbol">
+                        <h2>Conformacion del modelo de Pronóstico</h2>
+                        <div class="pronostico-text">
+                            <p v-text="'Se ha usado el criterio: '+ criterio"> </p>
+                            <p>La importancia de las variables es:</p>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th scoope="row">Variable</th>
+                                    <th>importancia</th>
+                                </tr>
+                                <tr v-for="(row, rowIndex) in matrizVarImportance" :key="rowIndex">
+                                    <th v-text="caracteristicas[rowIndex]"></th> <!-- Encabezado de fila -->
+                                    <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="pronostico-text">
+                            <p v-text="'El error medio absoluto fue: '+ mae"> </p>
+                            <p v-text="'El error cuadratico medio fue: '+ (mse/100)"> </p>
+                            <p v-text="'La raíz del error cuadratico medio fue: '+ (rmse/100)"> </p>
+                            <p v-text="'El Score que se obtuvo fue: ' + (r2score/100) "></p>
+
+                            <p v-text="'El score nos indica que el pronóstico se logrará en un '+r2score"></p>
+                            <p
+                                v-text="'Podriamos agregar que el modelo final se aleja un '+mse+' y se alejan en '+rmse+' unidades del valor real.'">
+                            </p>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>Pronostico</th>
+                                    <th>Valor Real</th>
+                                    </th>
+                                </tr>
+                                <tr v-for="(row, rowIndex) in matrizValores" :key="rowIndex">
+                                    <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="graphs">
+                            <p>A continuación se encuentra un grafico del Pronostico vs Valor Real</p>
+                            <iframe :src="test_graph" class="correlation"></iframe>
+                        </div>
+                        <p>Finalmente es momento de mostrar el grafico del árbol.</p>
+                        <div id="tree-container" style="width: 80%; margin: 0 auto; overflow-x: auto;">
+                            <img :src="tree_graph" alt="Árbol de decisión">
+                        </div>
+
+                    </div>
+                    <h2 v-if="mostrarDataArbol">Si desea realizar algun pronostico, llene el siguiente formualrio</h2>
+                    <div id="container-Pronosticos" v-if="mostrarDataArbol">
+                        <div>
+                            <form @submit.prevent="crearPronostico">
+                                <div v-for="feature in caracteristicas" :key="feature">
+                                    <label :for="feature" v-text="feature"></label>
+                                    <input type="text" :name="feature" v-model="formulario[feature]" required>
+                                </div>
+                                <button type="submit" class="custom-button">Generar Pronostico</button>
                             </form>
                         </div>
+
+                        <div>
+                            <h2 v-if="pronostico!== 0" v-text="'El pronostico es '+pronostico"></h2>
+                        </div>
                     </div>
+
                 </div>
+
+                <div v-else-if="activesubTab === 'tab2' && componentesSeleccionados2.length > 1">
+                    <h1>Bosques Aleatorios</h1>
+
+                    <div class="formArboles">
+                        <form id="formvarDependiente" @submit.prevent="correrBosque1">
+                            <h2>Seleccione las variables y configuraciones para iniciar el algoritmo</h2>
+                            <div id="containerComboBox">
+                                <label for="opcionVarDependiente">Seleccione la variable dependiente:</label>
+                                <select name="opcionVarDependiente2" id="opcionVarDependiente2"
+                                    v-model="varDependiente2" class="custom-select" required>
+                                    <option v-for="item in componentesSeleccionados2" :value="item" v-text="item">
+                                    </option>
+                                </select>
+                            </div>
+                            <div id="conatinerformvarDependiente">
+                                <div id="containerVarInd">
+                                    <div class="containerCheckboxes">
+                                        <div v-for="opcion in componentesSeleccionados2" :key="opcion"
+                                            class="custom-checkbox">
+                                            <input type="checkbox" :name="'opcion3-'+opcion" :id="'opcion3-'+opcion"
+                                                :value="opcion" v-model="caracteristicas2">
+                                            <label :for="'opcion3-'+opcion" v-text="opcion"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="containerConfigRandomForest">
+                                    <label for="n_estimators">Número de estimadores:</label>
+                                    <input type="number" id="n_estimators" name="n_estimators" min="1"
+                                        v-model="n_estimators" required>
+
+                                    <label for="min_samples_split2">Mínimo de muestras para dividir:</label>
+                                    <input type="number" id="min_samples_split2" name="min_samples_split2" min="1"
+                                        v-model="min_samples_split2" required>
+
+                                    <label for="min_samples_leaf2">Mínimo de muestras por hoja:</label>
+                                    <input type="number" id="min_samples_leaf2" name="min_samples_leaf2" min="1"
+                                        v-model="min_samples_leaf2" required>
+
+                                    <label for="random_state2">Semilla aleatoria:</label>
+                                    <input type="number" id="random_state2" name="random_state2" v-model="random_state2"
+                                        required>
+                                </div>
+
+                            </div>
+                            <button id="btnVarDependiente2" type="submit" class="custom-button">Seleccionar variables y
+                                configuración</button>
+                        </form>
+                    </div>
+                    <div id="DatosPronostico" v-if="mostrarDataForest">
+                        <h2>Conformacion del modelo de Pronóstico</h2>
+                        <div class="pronostico-text">
+                            <p v-text="'Se ha usado el criterio: '+ criterioForest"> </p>
+                            <p>La importancia de las variables es:</p>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th scoope="row">Variable</th>
+                                    <th>importancia</th>
+                                </tr>
+                                <tr v-for="(row, rowIndex) in matrizVarImportanceF" :key="rowIndex">
+                                    <th v-text="caracteristicas2[rowIndex]"></th> <!-- Encabezado de fila -->
+                                    <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="pronostico-text">
+                            <p v-text="'El error medio absoluto fue: '+ maeForest"> </p>
+                            <p v-text="'El error cuadratico medio fue: '+ (mseForest/100)"> </p>
+                            <p v-text="'La raíz del error cuadratico medio fue: '+ (rmseForest/100)"> </p>
+                            <p v-text="'El Score que se obtuvo fue: ' + (r2scoreForest/100) "></p>
+
+                            <p v-text="'El score nos indica que el pronóstico se logrará en un '+r2scoreForest"></p>
+                            <p
+                                v-text="'Podriamos agregar que el modelo final se aleja un '+mseForest+' y se alejan en '+rmseForest+' unidades del valor real.'">
+                            </p>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>Pronostico</th>
+                                    <th>Valor Real</th>
+                                    </th>
+                                </tr>
+                                <tr v-for="(row, rowIndex) in matrizValoresF" :key="rowIndex">
+                                    <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="graphs">
+                            <p>A continuación se encuentra un grafico del Pronostico vs Valor Real</p>
+                            <iframe :src="test_graphForest" class="correlation"></iframe>
+                        </div>
+                        <p>Finalmente es momento de mostrar el grafico de algun Árbol del Bosque.</p>
+                        <form @submit.prevent="CrearGraphTree">
+                            <label for="numberTree">Seleccione el Árbol que desea ver del bosque</label>
+                            <input type="number" name="numberTree" id="numberTree" v-model="numberTree" min="0"
+                                :max="n_estimators">
+                            <button type="submit">Seleccionar Árbol</button>
+                        </form>
+                        <div id="tree-container" style="width: 80%; margin: 0 auto; overflow-x: auto;"
+                            v-if="mostrarGraphF">
+                            <img :src="forest_graph" alt="Árbol de decisión del Bosque Aleatorio" :key="numberTree">
+                        </div>
+
+                    </div>
+                    <h2 v-if="mostrarDataForest">Si desea realizar algun pronostico, llene el siguiente formualrio</h2>
+                    <div id="container-Pronosticos" v-if="mostrarDataForest">
+                        <div>
+                            <form @submit.prevent="crearPronosticoForest1">
+                                <div v-for="feature in caracteristicas2" :key="feature">
+                                    <label :for="feature" v-text="feature"></label>
+                                    <input type="text" :name="feature" v-model="formulario2[feature]" required>
+                                </div>
+                                <button type="submit" class="custom-button">Generar Pronostico</button>
+                            </form>
+                        </div>
+
+                        <div>
+                            <h2 v-if="pronosticoF!== 0" v-text="'El pronostico es '+pronosticoF"></h2>
+                        </div>
+                    </div>
+
+                </div>
+
                 <div v-else>
                     <h1>Es necesario que pase por el proceso de PCA para que seleccione las componentes principales y a
                         partir de ahi podamas iniciar la construcción del árbol</h1>
                 </div>
+
             </div>
+
+            <div v-else-if="activeTab === 'tab4' ">
+                <h1>Creación de Algoritmos de Clasificación</h1>
+
+                <h2>Recuerde que los algoritmos de clasificación se emplean en variables cualiitativas, es decir
+                    no numericas, aquellas que su solo valor representa una clase .Ejemplo: Color(Amarillo, Rojo, etc),
+                    Situación (Aceptado o Rechazado), Estado (Concluido, En tramite), etc.</h2>
+
+                <div v-if="componentesSeleccionados2.length > 1">
+                    <h2>Componentes Principales</h2>
+                    <div class="table-container">
+                        <table class="tabla">
+                            <tr>
+                                <th scoope="row"></th>
+                                <th v-for="encabezado in componentesSeleccionados2" :key="encabezado"
+                                    v-text="encabezado">
+                                </th>
+                            </tr>
+                            <tr v-for="(row, rowIndex) in matriz3" :key="rowIndex">
+                                <th v-text="rowIndex"></th> <!-- Encabezado de fila -->
+                                <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <h2>Resumen estaditico de las Componentes Principales</h2>
+                    <div class="table-container">
+                        <table class="tabla">
+                            <tr>
+                                <th scoope="row"></th>
+                                <th v-for="encabezado in componentesSeleccionados2" :key="encabezado"
+                                    v-text="encabezado">
+                                </th>
+                            </tr>
+                            <tr v-for="(row, rowIndex) in matriz5" :key="rowIndex">
+                                <th v-text="stringArray3[rowIndex]"></th> <!-- Encabezado de fila -->
+                                <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <h2>Seleccione que algoritmo de clasificación desea empezar a
+                        crear</h2>
+                    <div class="tabs"
+                        style="display: flex; align-items: center; justify-content: center;">
+                        <button :class="{ active: activesubTab === 'tab3' }" @click="changesubTab('tab3')">Árbol de
+                            Decisión</button>
+                        <button :class="{ active: activesubTab === 'tab4' }" @click="changesubTab('tab4')">Bosques
+                            Aleatorios</button>
+                    </div>
+
+                </div>
+
+
+                <div v-if="activesubTab === 'tab3' && componentesSeleccionados2.length > 1 && activeTab === 'tab4'">
+                    <h1>Árbol de Clasificación</h1>
+
+                    <div class="formArboles">
+                        <form id="formvarDependiente3" @submit.prevent="correrArbolDecision2">
+                            <h2>Seleccione las variables y configuraciones para iniciar el algoritmo</h2>
+                            <div id="containerComboBox">
+                                <label for="opcionVarDependiente3">Seleccione la variable dependiente:</label>
+                                <select name="opcionVarDependiente3" id="opcionVarDependiente3" v-model="varDependienteClas"
+                                    class="custom-select" required>
+                                    <option v-for="item in componentesSeleccionados2" :value="item" v-text="item">
+                                    </option>
+                                </select>
+                            </div>
+                            <div id="conatinerformvarDependiente">
+                                <div id="containerVarInd">
+                                    <div class="containerCheckboxes">
+                                        <div v-for="opcion in componentesSeleccionados2" :key="opcion"
+                                            class="custom-checkbox">
+                                            <input type="checkbox" :name="'opcion4-'+opcion" :id="'opcion4-'+opcion"
+                                                :value="opcion" v-model="caracteristicasClas">
+                                            <label :for="'opcion4-'+opcion" v-text="opcion"></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="containerConfigTree">
+                                    <label for="max_depthClas">Profundidad máxima:</label>
+                                    <input type="number" id="max_depthClas" name="max_depthClas" min="1" v-model="max_depthClas" required>
+                                
+                                    <label for="min_samples_splitClas">Mínimo de muestras para dividir:</label>
+                                    <input type="number" id="min_samples_splitClas" name="min_samples_splitClas" min="1"
+                                        v-model="min_samples_splitClas" required>
+                                
+                                    <label for="min_samples_leafClas">Mínimo de muestras por hoja:</label>
+                                    <input type="number" id="min_samples_leafClas" name="min_samples_leafClas" min="1"
+                                        v-model="min_samples_leafClas" required>
+                                
+                                    <label for="random_stateClas">Semilla aleatoria:</label>
+                                    <input type="number" id="random_stateClas" name="random_stateClas" v-model="random_stateClas" required>
+                                </div>
+                                
+                            </div>
+                            <button id="btnVarDependienteClas" type="submit" class="custom-button">Seleccionar variables y
+                                configuración</button>
+                        </form>
+                    </div>
+                    <div id="DatosPronostico" v-if="mostrarDataArbol2">
+                        <h2>Conformacion del modelo de Pronóstico</h2>
+                        <div class="pronostico-text">
+                            <p v-text="'Se ha usado el criterio: '+ criterioClas"> </p>
+                            <p>La importancia de las variables es:</p>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th scoope="row">Variable</th>
+                                    <th>importancia</th>
+                                </tr>
+                                <tr v-for="(row, rowIndex) in matrizVarImportanceClas" :key="rowIndex">
+                                    <th v-text="caracteristicasClas[rowIndex]"></th> <!-- Encabezado de fila -->
+                                    <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="pronostico-text">
+                            <p v-text="'La exactitud del modelo es: '+ accuracyscore"> </p>
+                        </div>
+
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th>Pronostico</th>
+                                    <th>Valor Real</th>
+                                    </th>
+                                </tr>
+                                <tr v-for="(row, rowIndex) in matrizValoresClas" :key="rowIndex">
+                                    <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <h2>Matriz de Confusión</h2>
+
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th scoope="row"></th>
+                                    <th v-for="encabezado in encabezadoF2" :key="encabezado"
+                                        v-text="encabezado">
+                                    </th>
+                                </tr>
+                                <tr v-for="(row, rowIndex) in matrizConf" :key="rowIndex">
+                                    <th v-text="encabezadoF2[rowIndex]"></th> <!-- Encabezado de fila -->
+                                    <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+
+                        <h2>Reporte</h2>
+                        <div class="table-container">
+                            <table>
+                                <tr>
+                                    <th scoope="row"></th>
+                                    <th v-for="encabezado in encabezadoF" :key="encabezado"
+                                        v-text="encabezado">
+                                    </th>
+                                </tr>
+                                <tr v-for="(row, rowIndex) in reporte" :key="rowIndex">
+                                    <th v-text="filasF[rowIndex]"></th> <!-- Encabezado de fila -->
+                                    <td v-for="(value, colIndex) in row" :key="colIndex" v-text="value"></td>
+                                </tr>
+                            </table>
+                        </div>
+
+
+                        <p>Finalmente es momento de mostrar el grafico del árbol.</p>
+                        <div id="tree-container" style="width: 80%; margin: 0 auto; overflow-x: auto;">
+                            <img :src="tree_graphClas" alt="Árbol de decisión">
+                        </div>
+
+                    </div>
+                    <h2 v-if="mostrarDataArbol2">Si desea realizar alguna clasificación, llene el siguiente formualrio</h2>
+                    <div id="container-Pronosticos" v-if="mostrarDataArbol2">
+                        <div>
+                            <form @submit.prevent="crearPronosticoClasificacion">
+                                <div v-for="feature in caracteristicasClas" :key="feature">
+                                    <label :for="feature" v-text="feature"></label>
+                                    <input type="text" :name="feature" v-model="formularioClas[feature]" required>
+                                </div>
+                                <button type="submit" class="custom-button">Generar Clasificación</button>
+                            </form>
+                        </div>
+
+                        <div>
+                            <h2 v-if="pronosticoClas!== 0" v-text="'Su clasificación es '+pronosticoClas"></h2>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div v-else>
+                    <h1>Es necesario que pase por el proceso de PCA para que seleccione las componentes principales y a
+                        partir de ahi podamas iniciar la construcción del árbol</h1>
+                </div>
+
+            </div>
+
         </div>
     </div>
 
