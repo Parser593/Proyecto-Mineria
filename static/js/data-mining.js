@@ -30,7 +30,7 @@ function parseCSV2matrix(describedCSV, flag) {
     return matrizaux
   } else if (flag === 2) {
     return { matrizaux, stringArray };
-  } else if(flag === 3){
+  } else if (flag === 3) {
     return { matrizaux, stringArray, encabezado };
   }
 }
@@ -71,7 +71,7 @@ new Vue({
     mostrarDataArbol: false,
     mostrarDataForest: false,
     mostrarDataArbol2: false,
-
+    mostrarDataForest2: false,
     varDependiente: '',
     graphVarDep: '',
     caracteristicas: [],
@@ -128,7 +128,36 @@ new Vue({
     encabezadoF: {},
     encabezadoF2: {},
     filasF: {},
-    filasF2: {}
+    filasF2: {},
+    roc_curve: "",
+
+
+    n_estimators2: 0,
+    varDependienteClasFor: null,
+    min_samples_splitClasFor: null,
+    min_samples_leafClasFor: null,
+    random_stateClasFor: null,
+    caracteristicasClasFor: [],
+
+    accuracyscoreFor: null,
+    criterioClasFor: null,
+    reporteFor: null,
+    matrizConfFor: null,
+    formularioClasFor: {},
+    matrizVarImportanceClasFor: [],
+    matrizValoresClasFor: [],
+    pronosticoClasFor: 0,
+    encabezadoFor: {},
+    encabezadoFor2: {},
+    filasFor: {},
+    filasFor2: {},
+    roc_curveFor: "",
+
+    elbowgraph: '',
+    elbow: null,
+    numeroCluster: null,
+    centroides: null,
+    clusterGraph: null
   },
 
 
@@ -317,6 +346,7 @@ new Vue({
 
           this.mostrarTabla = true;
           this.crearGraficaTree();
+          this.k_means();
           swal({
             icon: 'success',
             title: '¡Éxito!',
@@ -472,15 +502,15 @@ new Vue({
     },
 
     CrearGraphTree() {
-      this.mostrarGraphF= false;
+      this.mostrarGraphF = false;
       axios.post('/GraphTreeForest', {
         caracteristicas: this.caracteristicas2,
         numeroArbol: this.numberTree
-        
+
       })
         .then(response => {
           this.forest_graph = response.data;
-          this.mostrarGraphF= true;
+          this.mostrarGraphF = true;
         })
         .catch(error => {
           console.log(error);
@@ -501,8 +531,8 @@ new Vue({
           console.log(error);
         });
     },
-    
-    
+
+
 
 
     correrArbolDecision2() {
@@ -524,12 +554,14 @@ new Vue({
           random_state: this.random_stateClas,
         })
           .then(response => {
-            const { accuracyscore, criterio, varImportance, matrizClass, report, valores, tree_graph } = response.data;
+            const { accuracyscore, criterio, varImportance, matrizClass, report, valores, tree_graph, roc_graph, encabezado} = response.data;
             this.matrizConf = JSON.parse(matrizClass);
             this.reporte = report;
             this.accuracyscore = accuracyscore;
             this.criterioClas = criterio;
             this.tree_graphClas = tree_graph;
+            this.roc_curve = roc_graph;
+            this.encabezadoF2 = encabezado;
 
             this.matrizVarImportanceClas = parseCSV2matrix(JSON.parse(varImportance), 1)
             this.matrizValoresClas = parseCSV2matrix(JSON.parse(valores), 1)
@@ -540,14 +572,14 @@ new Vue({
             this.reporte = result.matrizaux;
             this.encabezadoF = result.stringArray;
             this.filasF = result.encabezado;
-            
+
             const indice = this.encabezadoF.length / this.filasF.length;
             this.encabezadoF.splice(indice)
 
-            const result2 = parseCSV2matrix(this.matrizConf, 2);
-            this.matrizConf = result2.matrizaux;
-            this.encabezadoF2 = result2.stringArray;
-            this.encabezadoF2.splice(2)
+            this.matrizConf = parseCSV2matrix(this.matrizConf, 1);
+
+            
+
 
             swal({
               icon: 'success',
@@ -577,6 +609,108 @@ new Vue({
           console.log(error);
         });
     },
+
+
+
+
+
+
+
+    correrBosque2() {
+      this.mostrarDataForest2 = false;
+      if (this.caracteristicasClasFor.includes(this.varDependienteClasFor)) {
+        swal({
+          icon: 'error',
+          title: '¡Error!',
+          text: 'La variable dependiente no puede estar seleccionada como característica',
+        });
+      } else {
+        // Enviar los datos utilizando Axios
+        axios.post('/ClasificationForest', {
+          varDependiente: this.varDependienteClasFor,
+          caracteristicas: this.caracteristicasClasFor,
+          n_estimators: this.n_estimators2,
+          min_samples_split: this.min_samples_splitClasFor,
+          min_samples_leaf: this.min_samples_leafClasFor,
+          random_state: this.random_stateClasFor,
+        })
+          .then(response => {
+            const { accuracyscore, criterio, varImportance, matrizClass, report, valores, roc_graph, encabezado } = response.data;
+            this.matrizConfFor = JSON.parse(matrizClass);
+            this.reporteFor = report;
+            this.accuracyscoreFor = accuracyscore;
+            this.criterioClasFor = criterio;
+            this.roc_curveFor = roc_graph;
+            this.encabezadoFor2 = encabezado;
+
+            this.matrizVarImportanceClasFor = parseCSV2matrix(JSON.parse(varImportance), 1)
+            this.matrizValoresClasFor = parseCSV2matrix(JSON.parse(valores), 1)
+
+            this.mostrarDataForest2 = true;
+
+            const result = parseCSV2matrix(JSON.parse(this.reporteFor), 3);
+            this.reporteFor = result.matrizaux;
+            this.encabezadoFor = result.stringArray;
+            this.filasFor = result.encabezado;
+
+            const indice = this.encabezadoFor.length / this.filasFor.length;
+            this.encabezadoFor.splice(indice)
+
+            this.matrizConfFor= parseCSV2matrix(this.matrizConfFor, 1);
+            
+
+            swal({
+              icon: 'success',
+              title: '¡Éxito!',
+              text: 'Desplacese hacia abajo para observar los resultados.',
+            });
+
+          })
+          .catch(error => {
+            // Manejar el error si ocurre
+            console.error(error);
+          });
+      }
+    },
+
+    crearPronosticoClasificacion2() {
+      axios.post('/PronosticarClasificationF', this.formularioClasFor)
+        .then(response => {
+          this.pronosticoClasFor = response.data;
+          swal({
+            icon: 'success',
+            title: '¡Éxito!',
+            text: 'Caluclo de Pronostico realizado.',
+          });
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+
+
+
+
+    k_means() {
+      axios.post('/K-means', this.componentesSeleccionados2)
+        .then(response => {
+          this.elbowgraph = response.data.elbow_graph;
+          this.elbow = response.data.elbow;
+          this.numeroCluster = JSON.parse(response.data.numeroCluster);
+          this.centroides = JSON.parse(response.data.centroides);
+          this.clusterGraph = response.data.cluster_graph;
+
+          this.centroides = parseCSV2matrix(this.centroides, 1)
+
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    }
+
+
+
+
 
   },
   mounted() {

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NModelo Cargado</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles/predicts.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+</head>
+
+<body>
+    <script>
+        // Verificar si la variable de sesión indica que el archivo es incorrecto
+        var archivocargado = "{{ 'true' if session.get('model_uploaded') else 'false' }}";
+        archivocargado = (archivocargado === 'true'); // Convertir a booleano
+
+
+        // Restablecer la variable de sesión para futuros usos
+        {% set _ = session.pop('model_uploaded', None) %};
+
+        // Si la variable indica que el archivo es incorrecto, mostrar SweetAlert
+        if (archivocargado) {
+            swal("Modelo Cargado Exitosamente", "El archivo pkl que subiste ha cargado exitosamente tu modelo.", "success");
+        }
+
+    </script>
+
+    <nav>
+        <h1>Bienvenido</h1>
+    </nav>
+
+
+    <div id="app">
+
+        <div class="titles">
+            <h1>Calculo de Pronosticos</h1>
+            <h3>Para realizar una predicción con el modelo cargado, por favor complete las características principales.
+            </h3>
+
+        </div>
+
+        <div id="container-Pronosticos">
+            <div id="inputs">
+                <form @submit.prevent="crearPronostico">
+                    <div class="text-label" v-for="feature in features" :key="feature">
+                        <ul><label :for="feature" v-text="feature"></label></ul>
+                        <ul><input type="text" :name="feature" v-model="formulario[feature]" required></ul>
+                    </div>
+                    <button type="submit" class="custom-button">Generar Predicción</button>
+                </form>
+            </div>
+
+            <div>
+                <h2 v-if="pronostico!== 0" v-text="'Su clasificación es '+pronostico"></h2>
+            </div>
+        </div>
+
+        <div class="Salir">
+            <button @click="confirmClearSession" class="custom-button">Salir</button>
+        </div>
+
+    </div>
+</body>
+
+<script src="{{url_for('static', filename='js/predict.js')}}"></script>
+
+</html>

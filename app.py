@@ -1,5 +1,5 @@
 import os, pickle
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify, send_file, make_response
 from datetime import datetime
 import shutil
 import pandas as pd
@@ -7,12 +7,14 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, label_binarize
 from sklearn import model_selection
+from sklearn.cluster import KMeans
 from sklearn.tree import DecisionTreeRegressor, plot_tree, DecisionTreeClassifier
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, classification_report, confusion_matrix, accuracy_score
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, classification_report, confusion_matrix, accuracy_score, RocCurveDisplay, pairwise_distances_argmin_min, roc_curve, auc
 import matplotlib.pyplot as plt
+from kneed import KneeLocator
 
 plt.switch_backend('Agg')
 
@@ -476,8 +478,10 @@ def regresiontree():
     modelo_pkl = f"arbolpron_{os.path.basename(pkl_path)}"
     modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
 
+    datos = [pronosticoAD, caracteristicas]
+
     with open(modelo_pkl, 'wb') as archivo_pkl:
-        pickle.dump(pronosticoAD, archivo_pkl)
+        pickle.dump(datos, archivo_pkl)
 
     results = {
         'r2score': r2score,
@@ -508,6 +512,8 @@ def pronosticar():
     # Cargar el modelo desde el archivo pkl
     with open(modelo_pkl, 'rb') as archivo_pkl:
         pronosticoAD = pickle.load(archivo_pkl)
+
+    pronosticoAD = pronosticoAD[0]
     
     caracteristicas = request.json  # Obtener los datos enviados desde el formulario
     
@@ -522,6 +528,22 @@ def pronosticar():
 
     # Devolver el resultado de la predicción como respuesta JSON
     return pronostico
+
+@app.route("/descargar_regtree", methods=['GET'])
+def descargar_regtree():
+    # Ruta al archivo que se va a descargar
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"arbolpron_{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+    
+    filename = f'arbolpron_{os.path.basename(file_path_csv)}.pkl'
+
+    response = make_response(send_file(modelo_pkl, as_attachment=True))
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    return response
 
 
 
@@ -607,8 +629,10 @@ def regresionforest():
     modelo_pkl = f"bosquepron_{os.path.basename(pkl_path)}"
     modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
 
+    datos = [pronosticoBA, caracteristicas]
+
     with open(modelo_pkl, 'wb') as archivo_pkl:
-        pickle.dump(pronosticoBA, archivo_pkl)
+        pickle.dump(datos, archivo_pkl)
 
     results = {
         'r2score': r2score,
@@ -646,6 +670,8 @@ def graphForest():
     with open(modelo_pkl, 'rb') as archivo_pkl:
         pronosticoBA = pickle.load(archivo_pkl)
 
+    pronosticoBA = pronosticoBA[0]
+
     graphs_path = session.get('path_graphs')
     graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
 
@@ -679,6 +705,8 @@ def pronosticarForest():
     # Cargar el modelo desde el archivo pkl
     with open(modelo_pkl, 'rb') as archivo_pkl:
         pronosticoBA = pickle.load(archivo_pkl)
+
+    pronosticoBA = pronosticoBA[0]
     
     caracteristicas = request.json  # Obtener los datos enviados desde el formulario
     
@@ -693,6 +721,26 @@ def pronosticarForest():
 
     # Devolver el resultado de la predicción como respuesta JSON
     return pronostico
+
+
+@app.route("/descargar_regforest", methods=['GET'])
+def descargar_regforest():
+    # Ruta al archivo que se va a descargar
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"bosquepron_{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+    
+    filename = f'bosquepron_{os.path.basename(file_path_csv)}.pkl'
+
+    response = make_response(send_file(modelo_pkl, as_attachment=True))
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    return response
+
+
+
 
 
 
@@ -723,7 +771,6 @@ def clasificationtree():
     x = np.array(pkl.filter(items=caracteristicas))
     
     y = np.array(pkl[var_dependiente])
-    print("inicio")
     x_train, x_test, y_train, y_test = model_selection.train_test_split(x, y, 
                                                                     test_size = 0.2, 
                                                                     random_state = 0, 
@@ -738,7 +785,50 @@ def clasificationtree():
     ClasificacionAD.fit(x_train, y_train)
     
     y_Pronostico = ClasificacionAD.predict(x_test)
-    print("Final")
+    
+
+    y_test_bin = label_binarize(y_test, classes=np.unique(y_train))
+
+    # Predicciones de probabilidades para cada clase
+    y_probs = ClasificacionAD.predict_proba(x_test)
+
+    # Calcular la curva ROC y el área bajo la curva para cada clase
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    num_classes = len(ClasificacionAD.classes_)
+
+    graphs_path = session.get('path_graphs')
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+
+    filename = f"roc_tree{os.path.basename(pkl_path)}.svg"
+    graph_path = os.path.join(graphs_path, filename)
+
+    if num_classes == 2:
+        # Problema de clasificación binaria
+        fig, ax = plt.subplots()
+        roc_display_ad = RocCurveDisplay.from_estimator(ClasificacionAD, x_test, y_test, ax=ax)
+        roc_display_ad.figure_.savefig(graph_path, format='svg')
+    else:# Graficar las curvas ROC para cada clase
+        fig, ax = plt.subplots()
+        for class_index in range(num_classes):  # num_classes es el número de clases en tu problema
+            fpr[class_index], tpr[class_index], _ = roc_curve(y_test_bin[:, class_index], y_probs[:, class_index])
+            roc_auc[class_index] = auc(fpr[class_index], tpr[class_index])
+            ax.plot(fpr[class_index], tpr[class_index], label=f'Clase {class_index + 1} (AUC = {roc_auc[class_index]:.2f})')
+        ax.set_title('Curva ROC Multiclase')
+            # Configurar el diseño del gráfico
+        ax.plot([0, 1], [0, 1], 'k--')
+        ax.set_xlim([0.0, 1.0])
+        ax.set_ylim([0.0, 1.05])
+        ax.set_xlabel('Tasa de Falsos Positivos')
+        ax.set_ylabel('Tasa de Verdaderos Positivos')
+        ax.legend(loc="lower right")
+        fig.savefig(graph_path, format='svg')
+    
+    roc_graph = url_for('static', filename=graph_text+ filename)
+    
+
+
     accuracyscore = round((accuracy_score(y_test, y_Pronostico)*100),5)
 
     criterio = ClasificacionAD.criterion
@@ -752,18 +842,11 @@ def clasificationtree():
     report = report.T
 
     df = pd.DataFrame({'Real': y_test.flatten(), 'Pronostico': y_Pronostico.flatten()})
-    print(df.shape)
+    
     if(df.shape[0]>70):
         df = df.drop(df.index[70:])
-        print(df.shape)
-
-    df = df.round(5)
 
 
-    graphs_path = session.get('path_graphs')
-    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
-
-    print("Inicio2")
     plt.figure(figsize=(15,15))  
     plot_tree(ClasificacionAD, feature_names = caracteristicas)
     filename = f"treeclass{os.path.basename(pkl_path)}.png"
@@ -771,7 +854,6 @@ def clasificationtree():
     
     plt.savefig(graph_path)
     tree_graph = url_for('static', filename=graph_text + filename)
-    print("Fin2")
 
     varImportance_df = pd.DataFrame({'Importance': varImportance})
     varImportance_df = varImportance_df.round(5)
@@ -781,8 +863,11 @@ def clasificationtree():
     modelo_pkl = f"arbol_class{os.path.basename(pkl_path)}"
     modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
 
+    datos = [ClasificacionAD, caracteristicas]
+
     with open(modelo_pkl, 'wb') as archivo_pkl:
-        pickle.dump(ClasificacionAD, archivo_pkl)
+        pickle.dump(datos, archivo_pkl)
+
 
     results = {
         'accuracyscore': accuracyscore,
@@ -791,7 +876,9 @@ def clasificationtree():
         'matrizClass': matrizClas,
         'report': report.to_json(orient='index'),
         'valores': df.to_json(orient='index'),
-        'tree_graph': tree_graph
+        'tree_graph': tree_graph,
+        'roc_graph': roc_graph,
+        'encabezado': ClasificacionAD.classes_.tolist()
     }
 
     # Enviar los resultados como una respuesta JSON
@@ -812,12 +899,13 @@ def pronosticarClasification():
     # Cargar el modelo desde el archivo pkl
     with open(modelo_pkl, 'rb') as archivo_pkl:
         pronosticoAD = pickle.load(archivo_pkl)
+
+    pronosticoAD = pronosticoAD[0]
     
     caracteristicas = request.json  # Obtener los datos enviados desde el formulario
     
     # Acceder a los valores de las características
     caracteristicas_valores = [float(value) for value in caracteristicas.values()]
-    print(caracteristicas_valores)
 
     # Realizar la predicción utilizando el modelo pronosticado
     pronostico = pronosticoAD.predict([caracteristicas_valores])
@@ -826,3 +914,419 @@ def pronosticarClasification():
 
     # Devolver el resultado de la predicción como respuesta JSON
     return pronostico
+
+
+@app.route("/descargar_classtree", methods=['GET'])
+def descargar_classtree():
+    # Ruta al archivo que se va a descargar
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"arbol_class{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+    
+    filename = f'arbol_class{os.path.basename(file_path_csv)}.pkl'
+
+    response = make_response(send_file(modelo_pkl, as_attachment=True))
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    return response
+
+
+
+
+
+
+
+
+@app.route('/ClasificationForest', methods=['POST'])
+def clasificationForest():
+
+    data = request.get_json()
+    # Acceder a los datos recibidos
+    var_dependiente = data['varDependiente']
+    caracteristicas = data['caracteristicas']
+    n_estimators = int(data['n_estimators'])
+    min_samples_split = int(data['min_samples_split'])
+    min_samples_leaf = int(data['min_samples_leaf'])
+    random_state = int(data['random_state'])
+
+
+    #Abrir archivo
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    pkl = pd.read_pickle(pkl_path)
+
+    x = np.array(pkl.filter(items=caracteristicas))
+    
+    y = np.array(pkl[var_dependiente])
+    x_train, x_test, y_train, y_test = model_selection.train_test_split(x, y, 
+                                                                    test_size = 0.2, 
+                                                                    random_state = 0, 
+                                                                    shuffle = True)
+    
+
+    
+    ClasificacionBA = RandomForestClassifier(n_estimators=n_estimators, 
+                                          min_samples_split=min_samples_split, 
+                                         min_samples_leaf=min_samples_leaf, 
+                                         random_state=random_state)
+    ClasificacionBA.fit(x_train, y_train)
+    
+    y_Pronostico = ClasificacionBA.predict(x_test)
+    
+    y_test_bin = label_binarize(y_test, classes=np.unique(y_train))
+
+    # Predicciones de probabilidades para cada clase
+    y_probs = ClasificacionBA.predict_proba(x_test)
+
+    # Calcular la curva ROC y el área bajo la curva para cada clase
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    num_classes = len(ClasificacionBA.classes_)
+
+    graphs_path = session.get('path_graphs')
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+
+    filename = f"roc_tree{os.path.basename(pkl_path)}.svg"
+    graph_path = os.path.join(graphs_path, filename)
+
+    if num_classes == 2:
+        # Problema de clasificación binaria
+        fig, ax = plt.subplots()
+        roc_display_ad = RocCurveDisplay.from_estimator(ClasificacionBA, x_test, y_test, ax=ax)
+        roc_display_ad.figure_.savefig(graph_path, format='svg')
+    else:# Graficar las curvas ROC para cada clase
+        fig, ax = plt.subplots()
+        for class_index in range(num_classes):  # num_classes es el número de clases en tu problema
+            fpr[class_index], tpr[class_index], _ = roc_curve(y_test_bin[:, class_index], y_probs[:, class_index])
+            roc_auc[class_index] = auc(fpr[class_index], tpr[class_index])
+            ax.plot(fpr[class_index], tpr[class_index], label=f'Clase {class_index + 1} (AUC = {roc_auc[class_index]:.2f})')
+        ax.set_title('Curva ROC Multiclase')
+            # Configurar el diseño del gráfico
+        ax.plot([0, 1], [0, 1], 'k--')
+        ax.set_xlim([0.0, 1.0])
+        ax.set_ylim([0.0, 1.05])
+        ax.set_xlabel('Tasa de Falsos Positivos')
+        ax.set_ylabel('Tasa de Verdaderos Positivos')
+        ax.legend(loc="lower right")
+        fig.savefig(graph_path, format='svg')
+    
+    roc_graph = url_for('static', filename=graph_text+ filename)
+
+
+    accuracyscore = round((accuracy_score(y_test, y_Pronostico)*100),5)
+
+    criterio = ClasificacionBA.criterion
+    varImportance = ClasificacionBA.feature_importances_
+    matrizClas = pd.crosstab(y_test.ravel(), y_Pronostico)
+    matrizClas = matrizClas.to_json(orient='index')
+    
+
+    report = classification_report(y_test, y_Pronostico, output_dict=True)
+    report = pd.DataFrame(report).round(5)
+    report = report.T
+
+    df = pd.DataFrame({'Real': y_test.flatten(), 'Pronostico': y_Pronostico.flatten()})
+    if(df.shape[0]>70):
+        df = df.drop(df.index[70:])
+
+    df = df.round(5)
+
+
+    varImportance_df = pd.DataFrame({'Importance': varImportance})
+    varImportance_df = varImportance_df.round(5)
+    varImportance_json = varImportance_df.to_json(orient='index')
+
+
+    modelo_pkl = f"forest_class{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    datos = [ClasificacionBA, caracteristicas]
+
+    with open(modelo_pkl, 'wb') as archivo_pkl:
+        pickle.dump(datos, archivo_pkl)
+    
+
+    results = {
+        'accuracyscore': accuracyscore,
+        'criterio': criterio,
+        'varImportance': varImportance_json,
+        'matrizClass': matrizClas,
+        'report': report.to_json(orient='index'),
+        'valores': df.to_json(orient='index'),
+        'roc_graph': roc_graph,
+        'encabezado': ClasificacionBA.classes_.tolist()
+    }
+
+    # Enviar los resultados como una respuesta JSON
+    return jsonify(results)
+
+
+
+
+@app.route('/PronosticarClasificationF', methods=['POST'])
+def pronosticarClasificationF():
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"forest_class{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+
+    pronosticoBA = []
+
+
+    # Cargar el modelo desde el archivo pkl
+    with open(modelo_pkl, 'rb') as archivo_pkl:
+        pronosticoBA = pickle.load(archivo_pkl)
+
+    pronosticoBA = pronosticoBA[0]
+    
+    caracteristicas = request.json  # Obtener los datos enviados desde el formulario
+    
+    # Acceder a los valores de las características
+    caracteristicas_valores = [float(value) for value in caracteristicas.values()]
+    
+
+    # Realizar la predicción utilizando el modelo pronosticado
+    pronostico = pronosticoBA.predict([caracteristicas_valores])
+
+    pronostico = str(pronostico[0])
+
+    # Devolver el resultado de la predicción como respuesta JSON
+    return pronostico
+
+
+
+
+@app.route("/descargar_classforest", methods=['GET'])
+def descargar_classforest():
+    # Ruta al archivo que se va a descargar
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"forest_class{os.path.basename(pkl_path)}"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+    
+    filename = f'forest_class{os.path.basename(file_path_csv)}.pkl'
+
+    response = make_response(send_file(modelo_pkl, as_attachment=True))
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    return response
+
+
+
+
+
+
+
+
+@app.route('/K-means', methods=['POST'])
+def k_meansMethod():
+    componentes = request.json
+
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    pkl = pd.read_pickle(pkl_path)
+    pkl = pkl.filter(items=componentes)
+
+    estandarizar = StandardScaler()
+
+    MEstandarizada = estandarizar.fit_transform(pkl)
+
+    SSE = []
+    for i in range(2, 10):
+        km = KMeans(n_clusters=i, random_state=0)
+        km.fit(MEstandarizada)
+        SSE.append(km.inertia_)
+    
+    kl = KneeLocator(range(2, 10), SSE, curve="convex", direction="decreasing")
+
+    # Crear dataframe con los valores de SSE y k
+    data = {'k': range(2, 10), 'SSE': SSE}
+    df = pd.DataFrame(data)
+
+    # Graficar SSE en función de k usando Plotly Express
+    fig = px.line(df, x='k', y='SSE', markers=True)
+    # Trazar el punto de codo en la gráfica
+    fig.add_vline(x=kl.elbow, line_dash='dash', line_color='red', annotation_text="Punto de codo", annotation_position='top left')
+
+    fig.update_layout(title='Elbow Method', xaxis_title='Cantidad de clusters *k*', 
+                      yaxis_title='SSE', showlegend=True, height=600,width=1200,
+                      legend=dict(yanchor="top",y=0.99,xanchor="left",x=0.01))
+
+    graphs_path = session.get('path_graphs')
+    graph_text = "graphs/" + os.path.splitext(os.path.basename(file_path_csv))[0]+"/"
+
+    filename = f"elbowM{os.path.basename(pkl_path)}.html"
+    graph_path = os.path.join(graphs_path, filename)
+    fig.write_html(graph_path)
+    elbow_graph = url_for('static', filename=graph_text+ filename)
+
+
+
+    #K-MEANS
+    MParticional = KMeans(n_clusters=kl.elbow, random_state=0).fit(MEstandarizada)
+    MParticional.predict(MEstandarizada)
+    pkl['cluster'] = MParticional.labels_
+
+    #Cantidad de elementos en los clusters
+    numeroCluster = pkl.groupby(['cluster'])['cluster'].count()
+
+    centroides = pkl.groupby('cluster').mean()
+
+
+    # Lista de colores para asignar a los clusters
+    colores = ['red', 'blue', 'green', 'orange', 'purple', 'pink', 'brown', 'gray', 'cyan', 'yellow']
+
+    fig = go.Figure()
+
+    # Scatter plot de las muestras
+    for cluster in range(MParticional.n_clusters):
+        puntos_cluster = MParticional.labels_ == cluster
+        fig.add_trace(go.Scatter3d(
+            x=MEstandarizada[puntos_cluster, 0],
+            y=MEstandarizada[puntos_cluster, 1],
+            z=MEstandarizada[puntos_cluster, 2],
+            mode='markers',
+            marker=dict(
+                color=colores[cluster],
+                size=6
+            ),
+            name=f'Cluster {cluster + 1}'  # Etiqueta del cluster
+        ))
+
+    # Scatter plot de los centroides
+    fig.add_trace(go.Scatter3d(
+        x=MParticional.cluster_centers_[:, 0],
+        y=MParticional.cluster_centers_[:, 1],
+        z=MParticional.cluster_centers_[:, 2],
+        mode='markers',
+        marker=dict(
+            color=colores[:MParticional.n_clusters],  # Seleccionar colores para los centroides según el número de clusters
+            size=12,
+            symbol='circle'
+        ),
+        name='Centroides'
+    ))
+
+    # Configuración del diseño del gráfico
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(title='Componente 1'),
+            yaxis=dict(title='Componente 2'),
+            zaxis=dict(title='Componente 3')
+        ),
+        legend=dict(
+            title='Clusters'
+        )
+    )
+
+    # Guardar el gráfico
+    filename = f"3dclusters{os.path.basename(pkl_path)}.html"
+    graph_path = os.path.join(graphs_path, filename)
+    fig.write_html(graph_path)
+    cluster_graph = url_for('static', filename=graph_text+ filename)
+
+
+    modelo_pkl = f"K-Means{os.path.basename(pkl_path)}.csv"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+    pkl.to_csv(modelo_pkl)
+
+    results = {
+        'elbow_graph': elbow_graph,
+        'elbow': str(kl.elbow),
+        'numeroCluster': numeroCluster.to_json(),
+        'centroides': centroides.to_json(orient='index'),
+        'cluster_graph': cluster_graph,
+    }
+
+    return jsonify(results)
+
+
+
+@app.route("/descargar_kmeans", methods=['GET'])
+def descargar_kmeans():
+    # Ruta al archivo que se va a descargar
+    file_path_csv = session.get('file_path')
+    pkl_path = "tree"+os.path.basename(file_path_csv)
+    pkl_path = os.path.join(os.path.dirname(file_path_csv), pkl_path)
+    modelo_pkl = f"K-Means{os.path.basename(pkl_path)}.csv"
+    modelo_pkl = os.path.join(os.path.dirname(pkl_path), modelo_pkl)
+    
+    filename = f'KMeans_{os.path.basename(file_path_csv)}.csv'
+
+    response = make_response(send_file(modelo_pkl, as_attachment=True))
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
+
+    return response
+
+
+
+
+
+
+
+
+
+
+@app.route("/upload_pkl", methods=['POST'])
+def upload_pkl():
+    uploaded_file = request.files['file-pkl']
+    
+    if ( uploaded_file.filename.endswith('.pkl')):
+        timestamp = datetime.now().strftime('%H%M%S')
+        model_file_name = f"{uploaded_file.filename}_{timestamp}.pkl"
+        file_path = os.path.join(UPLOAD_FOLDER, model_file_name)
+        print(file_path)
+        uploaded_file.save(file_path)
+
+        session['model_uploaded'] = True
+        session['model_path'] = file_path
+
+        return redirect(url_for("predicts"))
+    else:
+        session['model_incorrecto'] = True
+        return redirect(url_for('home'))
+
+
+@app.route("/predicts")
+def predicts():
+    return render_template("predicts.html")
+
+
+
+@app.route("/obtenerFeatures", methods=['POST'])
+def obtenerFeatures():
+    model_path = session.get('model_path')
+    with open(model_path, 'rb') as archivo_pkl:
+        features = pickle.load(archivo_pkl)
+
+    features = features[1]
+
+    return jsonify(features)
+
+
+
+@app.route("/modelPrediction", methods=['POST'])
+def modelPrediction():
+
+    model_path = session.get('model_path')
+    caracteristicas = request.json  # Obtener los datos enviados desde el formulario
+
+    with open(model_path, 'rb') as archivo_pkl:
+        model = pickle.load(archivo_pkl)
+
+    model = model[0]
+
+    caracteristicas_valores = [float(value) for value in caracteristicas.values()]
+
+    prediccion = model.predict([caracteristicas_valores])
+
+    prediccion = str(prediccion[0])
+
+    return prediccion

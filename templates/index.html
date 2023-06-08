@@ -24,7 +24,7 @@
         // Restablecer la variable de sesión para futuros usos
         {% set _ = session.pop('archivo_incorrecto', None) %};
 
-        
+
         // Si la variable indica que el archivo es incorrecto, mostrar SweetAlert
         if (archivoIncorrecto) {
             swal("Archivo incorrecto", "El archivo que subiste no es válido.", "error");
@@ -61,7 +61,27 @@
             </form>
         </div>
 
-    </div>
+        <div id="pkl">
+            <h2>Si ya has usado nuestras plataforma y descargaste un modelo, puedes cargarlo en el siguiente apartado, aqui solo haras predicciones.</h2>
+            <div class="cargaFile">
+                <form id="pkl-form" action="/upload_pkl" method="POST" enctype="multipart/form-data">
+                    <div id="drop-zone-pkl" class="upload-area">
+                        <input type="file" accept=".pkl" name="file-pkl" id="my-file-pkl" required>
+    
+                        <label class="custom-upload"><i id="cloud-pkl" class="fa fa-cloud-upload"></i> <i id="ipkl"
+                                class="fa-solid fa-file"></i>
+                            <p id="mUploadpkl">Da click para abrir el explorador de archivos o arrastre su modelo en PKL</p>
+                        </label>
+    
+                    </div>
+                    <div class="submit">
+                        <input type="submit" id="submitFile" value="Cargar PKL">
+                    </div>
+                </form>
+            </div>
+        </div>
+    
+        </div>
 
 </body>
 <script src="{{url_for('static', filename='js/upload-file.js')}}"></script>

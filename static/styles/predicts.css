@@ -15,163 +15,30 @@ body {
 nav {
   background-color: black;
   color: white;
-  padding: 10px 20px;
+  padding: 30px 20px;
   width: 100%;
   text-align: center;
 }
 
-.graphs {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
 
-.tabs button {
-  /* Estilos generales de los botones de las pestañas */
-  padding: 10px 40px;
-  background-color: #eee;
-  border: none;
-  border-bottom: 2px solid transparent;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-.tabs button.active {
-  /* Estilos para el botón activo */
-  background-color: black;
-  border-bottom-color: #333;
-  font-weight: bold;
-  color: white;
-}
-
-.tabs button:hover {
-  background-color: #333;
-  color: #fff;
-}
-
-
-
-.table-container {
-  display: flex;
-  width: 100%;
-  overflow-x: auto;
-  justify-content: center;
-  flex-direction: column-reverse;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-table {
-  border-collapse: collapse;
-  text-align: center;
-  font-size: 13px;
-  min-width: 50%;
-}
-
-table th,
-table td {
-  border: 1px solid black;
-  padding: 10px 15px;
-}
-
-table th {
-  background-color: black;
-  border: 1px solid white;
-  color: white;
-}
-
-tr:nth-child(even) {
-  background-color: #f2f2f2;
-  /* Tono de gris para filas pares */
-}
-
-tr:nth-child(odd) {
-  background-color: #ffffff;
-  /* Fondo blanco para filas impares */
-}
-
-h1,
-h2 {
-  margin-bottom: 15px;
-  margin-top: 15px;
-}
-
-ul {
-  list-style-type: none;
-}
-
-iframe {
-  width: auto;
-  min-width: 450px;
-  max-height: 650px;
-  min-height: 500px;
-}
-
-.graphsHist {
+#container-Pronosticos {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  justify-content: center;
-  /* Centrar horizontalmente */
+  justify-items: center;
   align-items: center;
-  /* Centrar verticalmente */
-  column-gap: 8%;
-}
-
-.centered-item {
-  grid-column-start: 1;
-  grid-column-end: 3;
-  justify-self: center;
-}
-
-.correlation {
-  width: auto;
-  height: auto;
-  min-width: 1000px;
-  min-height: 650px;
-}
-
-h2 {
-  text-align: center;
-}
-
-#labelComponentesForm {
-  font-size: 20px;
-  font-weight: 500;
-}
-
-#formComponentes {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-
-#containerFormComp {
-  display: grid;
   grid-template-columns: repeat(2, 1fr);
-  column-gap: 10px;
-  margin-top: 25px;
-  margin-bottom: 25px;
+}
+
+form input {
+  font-family: inherit;
+  border: 1px solid #000;
   font-size: 15px;
-}
-
-#containerCheckboxes {
-  text-align: start;
-}
-
-#componentes {
-  display: flex;
-  flex-direction: column;
   text-align: center;
-  align-items: center;
-  justify-content: center;
+}
+
+
+.titles {
+  text-align: center;
+  padding: 50px 0;
 }
 
 .custom-button {
@@ -189,187 +56,22 @@ h2 {
   font-weight: bold;
 }
 
-#formvarDependiente{
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  margin: 50px 0px;
-}
-
-#conatinerformvarDependiente {
+.text-label {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  align-items: center;
-  justify-content: center;
+  column-gap: 15px;
+  margin-bottom: 5px;
 }
 
-
-#formvarDependiente label,
-#formvarDependiente select {
-  display: block;
-  margin-bottom: 10px;
-
-}
-
-
-.custom-select {
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: black;
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
-  width: 150px;
-  height: 30px;
-  text-align: center;
-}
-
-.custom-select option {
-  padding: 10px;
-  font-weight: bold;
-  
-}
-
-
-.custom-checkbox{
-  margin: 0 auto;
-}
-
-.custom-checkbox input[type="checkbox"] {
-  display: none;
-}
-
-.custom-checkbox label {
-  display: inline-block;
-  position: relative;
-  padding-left: 25px;
-  cursor: pointer;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.custom-checkbox label:before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 18px;
-  height: 18px;
-  border: 2px solid #000;
-  background-color: #000;
-  border-radius: 4px;
-}
-
-.custom-checkbox input[type="checkbox"]:checked + label:before {
-  background-color: #fff;
-}
-
-.custom-checkbox input[type="checkbox"]:checked + label:after {
-  content: "";
-  position: absolute;
-  left: 6px;
-  top: 2px;
-  width: 5px;
-  height: 10px;
-  border: solid #000;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-#containerComboBox{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#containerComboBox label,
-#containerConfigTree label{
-  margin-right: 20px;
-}
-
-#containerVarInd{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#containerConfigTree{
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  
-}
-
-#DatosPronostico table{
-  margin: 20px 0px;
-}
-
-#DatosPronostico p{
-  margin: 10px 0;
-}
-
-
-#container-Pronosticos{
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-
-}
-
-
-#container-Pronosticos div{
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 10px;
-}
-
-#container-Pronosticos form {
+form{
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-#container-Pronosticos label {
-  margin-right: 10px;  
-}
-
-.download-button {
-  display: inline-block;
-  padding: 15px 30px;
-  background-color: #000;
-  color: #ffffff;
-  border: none;
-  border-radius: 15px;
-  font-size: 16px;
-  text-decoration: none;
-  transition: background-color 0.3s ease;
-}
-
-.download-button:hover {
-  background-color: #000;
-  cursor: pointer;
-}
-
-.download-button i {
-  font-size: 35px;
-  vertical-align: middle;
-  margin-right: 5px;
-}
-
-.descarga{
+.Salir{
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px 0;
-}
-
-input{
-  border: 1px solid #000;
-  font-size: 15px;
-  text-align: center;
 }
