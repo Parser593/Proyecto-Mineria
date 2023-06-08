@@ -33,7 +33,7 @@
 
     <nav>
         <h1>BIENVENIDO</h1>
-        <p v-text="'USANDO ARCHIVO ' + nombreCSV"></p>
+        <h3 v-text="'USANDO ARCHIVO ' + nombreCSV"></h3>
     </nav>
 
     <div id="app">
@@ -86,10 +86,12 @@
                         <div v-for="(ruta, index) in histdis" :key="ruta" :class="getGraphClass(index, histdis.length)">
                             <iframe :src="ruta"></iframe>
                         </div>
+
                     </div>
                 </div>
                 <div class="graphs">
                     <h2>Histograma de Variables Categóricas</h2>
+                    <h3 v-if="histcat.length<1" v-text="'No hay variables categoricas en este arreglo.'"></h3>
                     <div class="graphsHist">
                         <div v-for="(ruta, index) in histcat" :key="ruta" :class="getGraphClass(index, histcat.length)">
                             <iframe :src="ruta"></iframe>
@@ -146,7 +148,7 @@
                                 <td>
                                     <ul>
                                         <li v-for="(value, valueIndex) in component" :key="valueIndex">
-                                            <p v-text="value"></p>
+                                            <h3 v-text="value"></h3>
                                         </li>
                                     </ul>
                                 </td>
@@ -187,8 +189,8 @@
                             </div>
                         </div>
                         <div id="componentes">
-                            <p v-text="'Haz seleccionado ' + componentesSeleccionados.length + ' Componentes'"></p>
-                            <p>Presione el botón para seleccionarlas y mostrar la tabla de las mismas</p>
+                            <h3 v-text="'Haz seleccionado ' + componentesSeleccionados.length + ' Componentes'"></h3>
+                            <h3>Presione el botón para seleccionarlas y mostrar la tabla de las mismas</h3>
                             <button id="btnComponentes" type="submit" class="custom-button">Seleccionar esas
                                 variables</button>
                         </div>
@@ -325,8 +327,8 @@
                     <div id="DatosPronostico" v-if="mostrarDataArbol">
                         <h2>Conformacion del modelo de Pronóstico</h2>
                         <div class="pronostico-text">
-                            <p v-text="'Se ha usado el criterio: '+ criterio"> </p>
-                            <p>La importancia de las variables es:</p>
+                            <h3 v-text="'Se ha usado el criterio: '+ criterio"> </h3>
+                            <h3>La importancia de las variables es:</h3>
                         </div>
 
                         <div class="table-container">
@@ -343,15 +345,15 @@
                         </div>
 
                         <div class="pronostico-text">
-                            <p v-text="'El error medio absoluto fue: '+ mae"> </p>
-                            <p v-text="'El error cuadratico medio fue: '+ (mse/100)"> </p>
-                            <p v-text="'La raíz del error cuadratico medio fue: '+ (rmse/100)"> </p>
-                            <p v-text="'El Score que se obtuvo fue: ' + (r2score/100) "></p>
+                            <h3 v-text="'El error medio absoluto fue: '+ mae"> </h3>
+                            <h3 v-text="'El error cuadratico medio fue: '+ (mse/100)"> </h3>
+                            <h3 v-text="'La raíz del error cuadratico medio fue: '+ (rmse/100)"> </h3>
+                            <h3 v-text="'El Score que se obtuvo fue: ' + (r2score/100) "></h3>
 
-                            <p v-text="'El score nos indica que el pronóstico se logrará en un '+r2score"></p>
-                            <p
+                            <h3 v-text="'El score nos indica que el pronóstico se logrará en un '+r2score"></h3>
+                            <h3
                                 v-text="'Podriamos agregar que el modelo final se aleja un '+mse+' y se alejan en '+rmse+' unidades del valor real.'">
-                            </p>
+                            </h3>
                         </div>
 
                         <div class="table-container">
@@ -368,10 +370,10 @@
                         </div>
 
                         <div class="graphs">
-                            <p>A continuación se encuentra un grafico del Pronostico vs Valor Real</p>
+                            <h3>A continuación se encuentra un grafico del Pronostico vs Valor Real</h3>
                             <iframe :src="test_graph" class="correlation"></iframe>
                         </div>
-                        <p>Finalmente es momento de mostrar el grafico del árbol.</p>
+                        <h3>Finalmente es momento de mostrar el grafico del árbol.</h3>
                         <div id="tree-container" style="width: 80%; margin: 0 auto; overflow-x: auto;">
                             <img :src="tree_graph" alt="Árbol de decisión">
                         </div>
@@ -401,7 +403,6 @@
                                 Descargar Árbol de Pronostico
                             </button>
                         </a>
-    
                     </div>
 
                 </div>
@@ -457,8 +458,8 @@
                     <div id="DatosPronostico" v-if="mostrarDataForest">
                         <h2>Conformacion del modelo de Pronóstico</h2>
                         <div class="pronostico-text">
-                            <p v-text="'Se ha usado el criterio: '+ criterioForest"> </p>
-                            <p>La importancia de las variables es:</p>
+                            <h3 v-text="'Se ha usado el criterio: '+ criterioForest"> </h3>
+                            <h3>La importancia de las variables es:</h3>
                         </div>
 
                         <div class="table-container">
@@ -475,15 +476,15 @@
                         </div>
 
                         <div class="pronostico-text">
-                            <p v-text="'El error medio absoluto fue: '+ maeForest"> </p>
-                            <p v-text="'El error cuadratico medio fue: '+ (mseForest/100)"> </p>
-                            <p v-text="'La raíz del error cuadratico medio fue: '+ (rmseForest/100)"> </p>
-                            <p v-text="'El Score que se obtuvo fue: ' + (r2scoreForest/100) "></p>
+                            <h3 v-text="'El error medio absoluto fue: '+ maeForest"> </h3>
+                            <h3 v-text="'El error cuadratico medio fue: '+ (mseForest/100)"> </h3>
+                            <h3 v-text="'La raíz del error cuadratico medio fue: '+ (rmseForest/100)"> </h3>
+                            <h3 v-text="'El Score que se obtuvo fue: ' + (r2scoreForest/100) "></h3>
 
-                            <p v-text="'El score nos indica que el pronóstico se logrará en un '+r2scoreForest"></p>
-                            <p
+                            <h3 v-text="'El score nos indica que el pronóstico se logrará en un '+r2scoreForest"></h3>
+                            <h3
                                 v-text="'Podriamos agregar que el modelo final se aleja un '+mseForest+' y se alejan en '+rmseForest+' unidades del valor real.'">
-                            </p>
+                            </h3>
                         </div>
 
                         <div class="table-container">
@@ -500,10 +501,10 @@
                         </div>
 
                         <div class="graphs">
-                            <p>A continuación se encuentra un grafico del Pronostico vs Valor Real</p>
+                            <h3>A continuación se encuentra un grafico del Pronostico vs Valor Real</h3>
                             <iframe :src="test_graphForest" class="correlation"></iframe>
                         </div>
-                        <p>Finalmente es momento de mostrar el grafico de algun Árbol del Bosque.</p>
+                        <h3>Finalmente es momento de mostrar el grafico de algun Árbol del Bosque.</h3>
                         <form @submit.prevent="CrearGraphTree">
                             <label for="numberTree">Seleccione el Árbol que desea ver del bosque</label>
                             <input type="number" name="numberTree" id="numberTree" v-model="numberTree" min="0"
@@ -532,7 +533,7 @@
                             <h2 v-if="pronosticoF!== 0" v-text="'El pronostico es '+pronosticoF"></h2>
                         </div>
                     </div>
-                    <div class="descarga" v-if="crearPronosticoForest1">
+                    <div class="descarga" v-if="mostrarDataForest">
                         <a href="{{ url_for('descargar_regforest') }}" download="classforest.csv">
                             <button class="download-button">
                                 <i class="fas fa-download"></i>
@@ -659,8 +660,8 @@
                     <div id="DatosPronostico" v-if="mostrarDataArbol2">
                         <h2>Conformacion del modelo de Clasificación</h2>
                         <div class="pronostico-text">
-                            <p v-text="'Se ha usado el criterio: '+ criterioClas"> </p>
-                            <p>La importancia de las variables es:</p>
+                            <h3 v-text="'Se ha usado el criterio: '+ criterioClas"> </h3>
+                            <h3>La importancia de las variables es:</h3>
                         </div>
 
                         <div class="table-container">
@@ -677,17 +678,17 @@
                         </div>
 
                         <div class="pronostico-text">
-                            <p v-text="'La exactitud del modelo es: '+ accuracyscore"> </p>
+                            <h3 v-text="'La exactitud del modelo es: '+ accuracyscore"> </h3>
                         </div>
 
                         <div class="graphs">
-                            <p>A continuación se encuentra un grafico de la curva ROC</p>
+                            <h3>A continuación se encuentra un grafico de la curva ROC</h3>
                             <div id="tree-container" style="width: 80%; margin: 0 auto; overflow-x: auto;">
                                 <img :src="roc_curve" alt="Árbol de decisión">
                             </div>
                         </div>
                         <h2>Se presenta la tabla de Clasifiación vs Valor Real</h2>
-                        <p>Si la muestra excede los 70 valores solo se presentaron los primeros 70.</p>
+                        <h3>Si la muestra excede los 70 valores solo se presentaron los primeros 70.</h3>
                         <div class="table-container">
                             <table>
                                 <tr>
@@ -734,7 +735,7 @@
                         </div>
 
 
-                        <p>Finalmente es momento de mostrar el grafico del árbol.</p>
+                        <h3>Finalmente es momento de mostrar el grafico del árbol.</h3>
                         <div id="tree-container" style="width: 80%; margin: 0 auto; overflow-x: auto;">
                             <img :src="tree_graphClas" alt="Árbol de decisión">
                         </div>
@@ -823,8 +824,8 @@
                     <div id="DatosPronostico" v-if="mostrarDataForest2">
                         <h2>Conformacion del modelo de Clasificación</h2>
                         <div class="pronostico-text">
-                            <p v-text="'Se ha usado el criterio: '+ criterioClasFor"> </p>
-                            <p>La importancia de las variables es:</p>
+                            <h3 v-text="'Se ha usado el criterio: '+ criterioClasFor"> </h3>
+                            <h3>La importancia de las variables es:</h3>
                         </div>
 
                         <div class="table-container">
@@ -841,17 +842,17 @@
                         </div>
 
                         <div class="pronostico-text">
-                            <p v-text="'La exactitud del modelo es: '+ accuracyscoreFor"> </p>
+                            <h3 v-text="'La exactitud del modelo es: '+ accuracyscoreFor"> </h3>
                         </div>
 
                         <div class="graphs">
-                            <p>A continuación se encuentra un grafico de la curva ROC</p>
+                            <h3>A continuación se encuentra un grafico de la curva ROC</h3>
                             <div id="tree-container" style="width: 80%; margin: 0 auto; overflow-x: auto;">
                                 <img :src="roc_curveFor" alt="Árbol de decisión">
                             </div>
                         </div>
                         <h2>Se presenta la tabla de Clasifiación vs Valor Real</h2>
-                        <p>Si la muestra excede los 70 valores solo se presentaron los primeros 70.</p>
+                        <h3>Si la muestra excede los 70 valores solo se presentaron los primeros 70.</h3>
                         <div class="table-container">
                             <table>
                                 <tr>
@@ -947,7 +948,7 @@
 
                 <div v-if="componentesSeleccionados2.length>2">
                     <h2>Elbow Method</h2>
-                    <p>Es necesario este metodo para determinar el número de clusters óptimo para sus datos.</p>
+                    <h3>Es necesario este metodo para determinar el número de clusters óptimo para sus datos.</h3>
                     <div class="graphs">
                         <iframe :src="elbowgraph" class="correlation"></iframe>
                     </div>
